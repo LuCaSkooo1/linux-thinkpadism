@@ -29,6 +29,10 @@
 
     theme = "thinkpad-dark";
 
+    # Where this repo lives. Only feeds the `rebuild` / `update` aliases
+    # and Neovim's <leader>nr; the build itself does not care.
+    flakePath = "${config.home.homeDirectory}/final";
+
     terminal = "wezterm";
     browser = "librewolf";
 

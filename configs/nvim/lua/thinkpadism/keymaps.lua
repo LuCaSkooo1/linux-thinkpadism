@@ -80,9 +80,11 @@ map("t", "<Esc><Esc>", [[<C-\><C-n>]], { desc = "Leave terminal mode" })
 -- This machine
 --------------------------------------------------------------------------
 
--- Straight into the rice. The path is where the flake expects to live;
--- change it here if you keep yours somewhere else.
+-- Straight into the rice. vim.g.thinkpadism_flake is set by the Home
+-- Manager module from programs.thinkpadism.flakePath; the fallback is for
+-- running this config outside Nix.
 map("n", "<leader>nr", function()
-    vim.cmd.edit(vim.fn.expand("~/linux-thinkpadism/flake.nix"))
-    vim.cmd.lcd(vim.fn.expand("~/linux-thinkpadism"))
+    local root = vim.g.thinkpadism_flake or vim.fn.expand("~/linux-thinkpadism")
+    vim.cmd.edit(root .. "/flake.nix")
+    vim.cmd.lcd(root)
 end, { desc = "Edit the Thinkpadism flake" })
