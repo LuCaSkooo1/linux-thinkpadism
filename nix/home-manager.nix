@@ -306,9 +306,11 @@ in {
           $tuiPerformance = ${cfg.terminal} -e ${cfg.tools.performance}
 
           $focusedMonitor = $(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .name')
-          $menu           = quickshell ipc call appLauncher_$focusedMonitor toggleAppLauncher
-          $appearanceMenu = quickshell ipc call appLauncher_$focusedMonitor toggleThemeMenu
-          $toggleDarkMode = quickshell ipc call appLauncher_$focusedMonitor toggleDarkMode
+          # IPC through the same wrapper, so it targets the store-path config the
+          # shell was started with (plain `quickshell ipc` looks in ~/.config/quickshell).
+          $menu           = ${lib.getExe cfg.package} ipc call appLauncher_$focusedMonitor toggleAppLauncher
+          $appearanceMenu = ${lib.getExe cfg.package} ipc call appLauncher_$focusedMonitor toggleThemeMenu
+          $toggleDarkMode = ${lib.getExe cfg.package} ipc call appLauncher_$focusedMonitor toggleDarkMode
         '';
 
         "hypr/hyprpaper.conf".source = "${configs}/hypr/hyprpaper.conf";
