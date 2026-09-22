@@ -96,7 +96,11 @@ in {
       package = null;
       portalPackage = null;
 
-      systemd.enable = true;
+      # UWSM starts the session and owns graphical-session.target (the
+      # NixOS module sets programs.hyprland.withUWSM). Letting Home
+      # Manager also stop and start hyprland-session.target from inside
+      # hyprland.lua races it on every login.
+      systemd.enable = false;
 
       extraLuaFiles = {
         # Required by the other modules rather than run on its own.
