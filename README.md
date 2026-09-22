@@ -354,6 +354,52 @@ Shell side: `eza`, `bat`, `ripgrep`, `fd`, `fzf`, `zoxide`, `lazygit`,
 
 ---
 
+## Adding things later
+
+Everything lives in this repo. `/etc/nixos/configuration.nix` is not read at
+all once you build with `--flake`, so editing it does nothing.
+
+| What you want | Where | Option |
+| --- | --- | --- |
+| A CLI tool or app, for you | `home/default.nix` | `home.packages` |
+| Something every user needs | `hosts/thinkpad/default.nix` | `environment.systemPackages` |
+| A system service | `hosts/thinkpad/default.nix` | `services.*` |
+| A program whose dotfiles HM should manage | `home/default.nix` | `programs.*` |
+| A Hyprland keybind or rule | `home/default.nix` | `hyprland.extraLua` |
+| Hostname, monitor, keyboard, timezone | `machine.nix` | — |
+| A whole external flake | `flake.nix` | `inputs` |
+
+`flake.nix` is only for *inputs* — new upstream sources. Day to day you will
+not touch it.
+
+```nix
+# home/default.nix — packages for your user
+home.packages = with pkgs; [discord gimp obsidian];
+```
+
+```nix
+# hosts/thinkpad/default.nix — a system service
+virtualisation.docker.enable = true;
+users.users.${username}.extraGroups = ["docker"];
+```
+
+Then, from anywhere:
+
+```sh
+rebuild          # alias for: sudo nixos-rebuild switch --flake <flakePath>
+```
+
+> **Flakes only see git-tracked files.** Editing an existing file is fine, but
+> a file you *create* is invisible to Nix until you `git add` it — which
+> usually surfaces as a confusing `path ... does not exist`. When something
+> you just wrote seems to be ignored, `git status` first.
+
+If a rebuild leaves the system broken, the previous generation is still in the
+boot menu, and `sudo nixos-rebuild switch --flake . --rollback` steps back
+without rebooting.
+
+---
+
 ## Customising
 
 Machine-specific values — username, hostname, monitor, keyboard, timezone —
