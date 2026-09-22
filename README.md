@@ -1,6 +1,6 @@
 <div align="center">
 
-# Linux Thinkpadism
+# 🔴 Linux Thinkpadism 🔴
 
 **A red-accented retro desktop for Hyprland, tuned for NixOS and ThinkPads.**
 
