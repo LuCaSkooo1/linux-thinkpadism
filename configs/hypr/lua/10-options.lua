@@ -12,8 +12,8 @@ local theme = require("lib.theme")
 -- on the HD+ option) -- neither wants fractional scaling, so scale 1 is
 -- right and "auto" would only risk guessing otherwise.
 --
--- Machine-specific overrides belong in 00-machine.lua, which the Home
--- Manager module generates and Hyprland loads first.
+-- Machine-specific overrides belong in 90-machine.lua, which the Home
+-- Manager module generates and Hyprland loads last.
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
 --------------------------------------------------------------------------
@@ -131,7 +131,7 @@ hl.config({
 
 hl.config({
     input = {
-        -- Overridden per-machine in 00-machine.lua.
+        -- Overridden per-machine in 90-machine.lua, which loads later.
         kb_layout  = "us",
         kb_options = "",
 

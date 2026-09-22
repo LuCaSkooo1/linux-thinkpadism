@@ -9,11 +9,11 @@
       "trayIconSize": 16,
       "workspaceCount": 10
     },
-    "currentTheme": "thinkpad-light",
+    "currentTheme": "thinkpad-dark",
     "currentWallpaper": "",
     "execCommands": {
       "files": "nemo",
-      "terminal": "kitty",
+      "terminal": "wezterm",
       "tuiAudio": "wiremix",
       "tuiFiles": "yazi",
       "tuiNetwork": "nmtui",
@@ -29,7 +29,7 @@
       "ram": ""
     },
     "systemProfileImageSource": "",
-    "version": "0.2",
+    "version": "0.3",
     "wallpaperDirectory": "~/Pictures/Wallpapers"
   }
 }

@@ -1,0 +1,211 @@
+# Terminal, file manager, editor and the shell environment around them.
+self: {
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  cfg = config.programs.thinkpadism;
+  configs = "${self}/configs";
+
+  inherit (lib) mkIf mkMerge;
+
+  neovim = import ../neovim.nix {
+    inherit pkgs lib;
+    withTools = cfg.neovim.languageServers;
+  };
+in {
+  config = mkIf cfg.enable (mkMerge [
+    ###################################################################
+    # WezTerm
+    ###################################################################
+    (mkIf cfg.wezterm.enable {
+      home.packages = [pkgs.wezterm];
+
+      # Written straight out of the repo rather than generated from Nix:
+      # the config is real Lua, meant to be read and edited, and routing
+      # it through an attrset would only obscure it.
+      xdg.configFile = {
+        "wezterm/wezterm.lua".source = "${configs}/wezterm/wezterm.lua";
+        "wezterm/colors.lua".source = "${configs}/wezterm/colors.lua";
+      };
+    })
+
+    ###################################################################
+    # Yazi
+    ###################################################################
+    (mkIf cfg.yazi.enable {
+      programs.yazi = {
+        enable = true;
+        # `yy` changes the parent shell's directory to wherever you left
+        # yazi, which is most of the point of using it.
+        shellWrapperName = "yy";
+        enableBashIntegration = true;
+        enableZshIntegration = true;
+      };
+
+      # The module only writes these when its own options are set, so
+      # there is no collision with the TOML shipped here.
+      xdg.configFile = {
+        "yazi/yazi.toml".source = "${configs}/yazi/yazi.toml";
+        "yazi/theme.toml".source = "${configs}/yazi/theme.toml";
+        "yazi/keymap.toml".source = "${configs}/yazi/keymap.toml";
+      };
+
+      # Previewers and openers yazi.toml reaches for.
+      home.packages = with pkgs; [
+        ffmpegthumbnailer # video thumbnails
+        p7zip # archive previews
+        jq
+        poppler-utils # PDF previews
+        mediainfo
+        exiftool
+        ouch # the archive previewer
+      ];
+    })
+
+    ###################################################################
+    # Neovim
+    ###################################################################
+    (mkIf cfg.neovim.enable {
+      home.packages = [neovim];
+
+      home.sessionVariables = {
+        EDITOR = "nvim";
+        VISUAL = "nvim";
+        MANPAGER = "nvim +Man!";
+      };
+
+      # The Lua tree, installed as a whole directory so `require` paths
+      # resolve the way they do in the repo.
+      xdg.configFile."nvim" = {
+        source = "${configs}/nvim";
+        recursive = true;
+      };
+    })
+
+    ###################################################################
+    # The shell environment
+    ###################################################################
+    {
+      programs.bash = {
+        enable = true;
+        historyControl = ["ignoredups" "erasedups"];
+        historySize = 20000;
+        historyFileSize = 50000;
+
+        shellAliases = {
+          # eza, not ls. The icons need the Nerd Font that the NixOS
+          # module installs.
+          ls = "eza --group-directories-first";
+          ll = "eza -l --git --group-directories-first";
+          la = "eza -la --git --group-directories-first";
+          lt = "eza --tree --level=2 --group-directories-first";
+
+          cat = "bat --style=plain";
+          grep = "rg";
+
+          # NixOS, from anywhere.
+          rebuild = "sudo nixos-rebuild switch --flake ~/linux-thinkpadism";
+          rebuild-test = "sudo nixos-rebuild test --flake ~/linux-thinkpadism";
+          update = "nix flake update --flake ~/linux-thinkpadism";
+          gc = "sudo nix-collect-garbage --delete-older-than 14d";
+
+          # Battery, the thing you check most on a fifteen-year-old
+          # laptop.
+          bat-health = "upower -i /org/freedesktop/UPower/devices/battery_BAT0";
+        };
+      };
+
+      programs.starship = {
+        enable = true;
+        enableBashIntegration = true;
+        settings = {
+          add_newline = false;
+          format = lib.concatStrings [
+            "$directory"
+            "$git_branch"
+            "$git_status"
+            "$nix_shell"
+            "$cmd_duration"
+            "$line_break"
+            "$character"
+          ];
+          character = {
+            success_symbol = "[▌](bold #b3121d)";
+            error_symbol = "[▌](bold #ff5a63)";
+          };
+          directory = {
+            style = "bold #e0303c";
+            truncation_length = 3;
+            truncate_to_repo = false;
+          };
+          git_branch.style = "#9a9691";
+          git_status.style = "#e8b44c";
+          nix_shell = {
+            symbol = "❄ ";
+            style = "#7fa3c4";
+            format = "[$symbol$state]($style) ";
+          };
+          cmd_duration = {
+            min_time = 2000;
+            style = "#4a4a4a";
+          };
+        };
+      };
+
+      programs.fzf = {
+        enable = true;
+        enableBashIntegration = true;
+        defaultOptions = [
+          "--height=40%"
+          "--layout=reverse"
+          "--border=sharp"
+          "--color=bg+:#232323,fg+:#e6e4e1,hl:#e0303c,hl+:#ff5a63"
+          "--color=border:#b3121d,prompt:#e0303c,pointer:#e0303c,marker:#e8b44c"
+        ];
+      };
+
+      programs.zoxide = {
+        enable = true;
+        enableBashIntegration = true;
+      };
+
+      programs.bat = {
+        enable = true;
+        config.theme = "ansi";
+      };
+
+      programs.git = {
+        enable = true;
+        settings = {
+          init.defaultBranch = "main";
+          pull.rebase = true;
+          push.autoSetupRemote = true;
+        };
+      };
+
+      programs.delta = {
+        enable = true;
+        enableGitIntegration = true;
+        options = {
+          line-numbers = true;
+          syntax-theme = "ansi";
+          plus-style = "syntax #1c2318";
+          minus-style = "syntax #251618";
+        };
+      };
+
+      programs.btop = {
+        enable = true;
+        settings = {
+          color_theme = "TTY";
+          theme_background = false;
+          vim_keys = true;
+          # A dual-core Sandy Bridge does not need a 10Hz refresh.
+          update_ms = 2000;
+        };
+      };
+    }
+  ]);
+}
