@@ -18,7 +18,7 @@ print_txt() {
 
 echo "
 "
-print_txt "【 Welcome to the Retroism Setup Process. 】" "$GREEN"
+print_txt "【 Welcome to the Thinkpadism Setup Process. 】" "$GREEN"
 print_txt " _________________________________________" "$GREEN"
 
 echo
@@ -74,7 +74,7 @@ if [ ${#missing_deps[@]} -gt 0 ]; then
 fi
 
 if [ ! -d "$RICE_CONFIGS" ]; then
-    print_txt "Error: Corrupt repository! '$RICE_CONFIGS' not found! Please re-install Retroism. Exiting." "$RED"
+    print_txt "Error: Corrupt repository! '$RICE_CONFIGS' not found! Please re-install Thinkpadism. Exiting." "$RED"
     exit 1
 fi
 
@@ -121,6 +121,6 @@ fi
 echo
 print_txt "_____________________________________________________________________________" "$NC"
 echo
-print_txt "Successfully installed Retroism!" "$GREEN"
+print_txt "Successfully installed Thinkpadism!" "$GREEN"
 print_txt "It's recommended to restart your computer, to ensure all changes take effect." "$NC"
 print_txt "_____________________________________________________________________________" "$NC"

@@ -3,23 +3,33 @@
     "bar": {
       "fontSize": 12,
       "monochromeTrayIcons": true,
-      "trayIconSize": 16
+      "showBattery": true,
+      "showDate": true,
+      "showPerformance": true,
+      "trayIconSize": 16,
+      "workspaceCount": 10
     },
-    "currentTheme": "default",
+    "currentTheme": "thinkpad-light",
+    "currentWallpaper": "",
     "execCommands": {
       "files": "nemo",
-      "terminal": "kitty"
+      "terminal": "kitty",
+      "tuiAudio": "wiremix",
+      "tuiFiles": "yazi",
+      "tuiNetwork": "nmtui",
+      "tuiPerformance": "btop"
     },
     "militaryTimeClockFormat": true,
     "setWallpaperToThemeWallpaper": true,
     "systemDetails": {
       "cpu": "CPU Name",
       "gpu": "GPU Name",
-      "osName": "Linux Distro",
-      "osVersion": "Distro Version",
+      "osName": "NixOS",
+      "osVersion": "unstable",
       "ram": "Ram"
     },
-    "systemProfileImageSource": "/home/username/Pictures/system_profile_picture.png",
-    "version": "0.1"
+    "systemProfileImageSource": "",
+    "version": "0.2",
+    "wallpaperDirectory": "~/Pictures/Wallpapers"
   }
 }

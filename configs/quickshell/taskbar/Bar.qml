@@ -2,12 +2,13 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
+import QtQuick.Layouts
 
 import "../popups" as Popups
 import ".."
 
 Scope {
-    // Taskbar variants, we have one taskber per screen.
+    // Taskbar variants, we have one taskbar per screen.
     Variants {
         model: Quickshell.screens
         Item {
@@ -66,54 +67,91 @@ Scope {
                 }
                 /*=== ===================================== ===*/
 
-                /*=== Workspaces & Background for it ===*/
-                Item {
-                    id: test2
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    height: parent.height - 8
+                /* A sunken, chiselled well. Used behind the workspace strip
+                 * and the tray so both read as recessed into the bar. */
+                component SunkenWell: Item {
+                    default property alias contents: wellContent.data
 
-                    // The margins are weird due to the additional outlines added to each button
-                    // that add depth, which is 1 pixel; thus we expand the width by 5 and not 4.
-                    anchors.leftMargin: 11
-                    width: workspaces.width + 5
+                    implicitHeight: taskbar.height - 8
+                    anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+
                     Rectangle {
-                        id: background2
-                        anchors.fill: test2
-
+                        anchors.fill: parent
                         anchors.bottomMargin: -2
-                        color: "transparent"
-                        Rectangle {
-                            anchors.fill: background2
-                            border.width: 0
-                            color: Config.colors.shadow
-                        }
-                        Rectangle {
-                            anchors.fill: background2
-                            color: "transparent"
-                            border.width: 1
-                            z: -5
-                            anchors.margins: -1
-                            anchors.bottomMargin: 1
-                        }
+                        color: Config.colors.shadow
                     }
-                    Workspaces {
-                        id: workspaces
-                        anchors.leftMargin: 2
-                        anchors.rightMargin: 0
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: -1
+                        anchors.bottomMargin: 1
+                        color: "transparent"
+                        border.width: 1
+                        border.color: Config.colors.outline
+                        z: -5
+                    }
+                    Item {
+                        id: wellContent
+                        anchors.fill: parent
                     }
                 }
-                /*=== ============================== ===*/
+
+                /*=== Left group: workspaces, start, theme, TUI tools ===*/
+                RowLayout {
+                    id: leftGroup
+                    anchors.left: parent.left
+                    anchors.leftMargin: 11
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 6
+
+                    SunkenWell {
+                        // +5 rather than +4: each button carries an extra
+                        // pixel of chiselled outline.
+                        implicitWidth: workspaces.width + 5
+                        Workspaces {
+                            id: workspaces
+                            anchors.leftMargin: 2
+                            anchors.rightMargin: 0
+                        }
+                    }
+
+                    TaskbarButton {
+                        id: startmenuButton
+                        isToggled: root.currentPopup == Config.SystemPopup.Startmenu
+                        onClicked: taskbar.togglePopup(Config.SystemPopup.Startmenu)
+                    }
+
+                    TaskbarButton {
+                        id: themeMenuButton
+                        isToggled: root.currentPopup == Config.SystemPopup.ThemePicker
+                        iconFontValue: ""
+                        onClicked: taskbar.togglePopup(Config.SystemPopup.ThemePicker)
+                    }
+
+                    // Thin divider between shell popups and app launchers.
+                    Rectangle {
+                        Layout.preferredWidth: 1
+                        Layout.preferredHeight: 18
+                        color: Config.colors.outline
+                        opacity: 0.35
+                    }
+
+                    QuickTools {
+                        id: quickTools
+                    }
+                }
+                /*=== ============================================== ===*/
 
                 /*=== StartMenu & Other popup Stuff ===*/
                 Popups.StartMenu {
                     id: startMenu
-                    menuWidth: workspaces.width + startmenuButton.width
+                    // Popups anchor in window coordinates, so offset by the group's own x.
+                    menuWidth: leftGroup.x + startmenuButton.x
                     closeCallback: taskbar.closeAllPopups
                 }
                 Popups.ThemeMenu {
                     id: themeMenu
-                    menuWidth: workspaces.width + startmenuButton.width + themeMenuButton.width
+                    menuWidth: leftGroup.x + themeMenuButton.x
+                    closeCallback: taskbar.closeAllPopups
                 }
                 Popups.AppLauncher {
                     id: appLauncher
@@ -122,6 +160,29 @@ Scope {
                     popupWidth: 500
                     screenHeight: modelData.height
                 }
+
+                /* Open `popup`, or close whatever is open if it already is.
+                 * Every popup goes through here so only one can ever be up. */
+                function togglePopup(popup) {
+                    if (root.currentPopup === popup) {
+                        taskbar.closeAllPopups();
+                        return;
+                    }
+                    taskbar.closeAllPopups();
+                    switch (popup) {
+                    case Config.SystemPopup.Startmenu:
+                        startMenu.openStartMenu();
+                        break;
+                    case Config.SystemPopup.ThemePicker:
+                        themeMenu.openThemeMenu();
+                        break;
+                    case Config.SystemPopup.AppLauncher:
+                        appLauncher.openAppLauncher();
+                        break;
+                    }
+                    root.currentPopup = popup;
+                }
+
                 function closeAllPopups() {
                     switch (root.currentPopup) {
                     case Config.SystemPopup.Startmenu:
@@ -138,105 +199,72 @@ Scope {
                 }
 
                 TaskbarButton {
-                    id: startmenuButton
-                    isToggled: root.currentPopup == Config.SystemPopup.Startmenu ? true : false
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: workspaces.width + 20 + 4
-                    onClicked: {
-                        if (root.currentPopup == Config.SystemPopup.None) {
-                            startMenu.openStartMenu();
-                            root.currentPopup = Config.SystemPopup.Startmenu;
-                        } else {
-                            taskbar.closeAllPopups();
-                            root.currentPopup = Config.SystemPopup.None;
-                        }
-                    }
-                }
-                TaskbarButton {
-                    id: themeMenuButton
-                    isToggled: root.currentPopup == Config.SystemPopup.ThemePicker ? true : false
-                    iconFontValue: "\ue3ae"
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: workspaces.width + 40 + 11
-                    onClicked: {
-                        if (root.currentPopup == Config.SystemPopup.None) {
-                            themeMenu.openThemeMenu();
-                            root.currentPopup = Config.SystemPopup.ThemePicker;
-                        } else {
-                            taskbar.closeAllPopups();
-                            root.currentPopup = Config.SystemPopup.None;
-                        }
-                    }
-                }
-                TaskbarButton {
                     id: appLauncherButton
-                    isToggled: root.currentPopup == Config.SystemPopup.AppLauncher ? true : false
-                    iconFontValue: "\ue8b6"
+                    isToggled: root.currentPopup == Config.SystemPopup.AppLauncher
+                    iconFontValue: ""
                     anchors.centerIn: parent
-                    onClicked: {
-                        if (root.currentPopup == Config.SystemPopup.None) {
-                            appLauncher.openAppLauncher();
-                            root.currentPopup = Config.SystemPopup.AppLauncher;
-                        } else {
-                            taskbar.closeAllPopups();
-                            root.currentPopup = Config.SystemPopup.None;
-                        }
-                    }
+                    onClicked: taskbar.togglePopup(Config.SystemPopup.AppLauncher)
                 }
+
                 Scope {
                     id: appLauncherIpc
                     property string screenName: taskbar.screen.name
                     IpcHandler {
                         target: "appLauncher_" + appLauncherIpc.screenName
+
                         function toggleAppLauncher() {
-                            if (root.currentPopup == Config.SystemPopup.None) {
-                                appLauncher.openAppLauncher();
-                                root.currentPopup = Config.SystemPopup.AppLauncher;
-                            } else {
-                                taskbar.closeAllPopups();
-                                root.currentPopup = Config.SystemPopup.None;
-                            }
+                            taskbar.togglePopup(Config.SystemPopup.AppLauncher);
+                        }
+
+                        function toggleThemeMenu() {
+                            taskbar.togglePopup(Config.SystemPopup.ThemePicker);
+                        }
+
+                        function toggleStartMenu() {
+                            taskbar.togglePopup(Config.SystemPopup.Startmenu);
+                        }
+
+                        // Bound to a key in hyprland.conf so dark/light can be
+                        // flipped without reaching for the mouse.
+                        function toggleDarkMode() {
+                            Config.toggleDarkMode();
                         }
                     }
                 }
-
                 /*=== ============================= ===*/
 
-                /*=== System Tray & Background for it ===*/
-                Item {
-                    id: test
-                    anchors.verticalCenter: parent.verticalCenter
+                /*=== Right group: performance, battery, tray, clock ===*/
+                RowLayout {
+                    id: rightGroup
                     anchors.right: parent.right
                     anchors.rightMargin: 12
-                    height: parent.height - 8
-                    width: sysTray.width + 18
-                    Rectangle {
-                        id: background
-                        anchors.fill: test
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 8
 
-                        anchors.bottomMargin: -2
-                        color: "transparent"
-                        Rectangle {
-                            anchors.fill: background
-                            border.width: 0
-                            color: Config.colors.shadow
-                        }
-                        Rectangle {
-                            anchors.fill: background
-                            color: "transparent"
-                            border.width: 1
-                            z: -5
-                            anchors.margins: -1
-                            anchors.bottomMargin: 1
-                        }
+                    PerformanceWidget {
+                        id: performanceWidget
                     }
-                    SysTray {
-                        id: sysTray
+
+                    Rectangle {
+                        visible: performanceWidget.visible
+                        Layout.preferredWidth: 1
+                        Layout.preferredHeight: 18
+                        color: Config.colors.outline
+                        opacity: 0.35
+                    }
+
+                    BatteryWidget {
+                        id: batteryWidget
+                    }
+
+                    SunkenWell {
+                        implicitWidth: sysTray.width + 18
+                        SysTray {
+                            id: sysTray
+                        }
                     }
                 }
-                /*=== =============================== ===*/
+                /*=== ============================================= ===*/
             }
 
             /*=== POPUP CLOSING PANEL ===*/
@@ -249,16 +277,13 @@ Scope {
 
                 implicitHeight: screen.height
 
-                // Better UX to not have it close on hotbar press? idk. TODO: Figure this out
-                //implicitHeight: screen.height - taskbar.implicitHeight
-
                 anchors {
                     bottom: true
                     left: true
                     right: true
                 }
 
-                visible: root.currentPopup != Config.SystemPopup.None ? true : false
+                visible: root.currentPopup != Config.SystemPopup.None
 
                 exclusionMode: ExclusionMode.Ignore
 
@@ -266,7 +291,7 @@ Scope {
                     id: popupArea
                     width: Screen.width
                     height: Screen.height
-                    visible: root.currentPopup != Config.SystemPopup.None ? true : false
+                    visible: root.currentPopup != Config.SystemPopup.None
                     onClicked: {
                         taskbar.closeAllPopups();
                     }
@@ -274,11 +299,5 @@ Scope {
             }
             /*=== =================== ===*/
         }
-    }
-
-    enum SystemPopups {
-        Startmenu,
-        ThemePicker,
-        None
     }
 }

@@ -49,14 +49,40 @@ PopupWindow {
                         implicitWidth: content.width
 
                         Item {
+                            id: profile
                             implicitWidth: 150
                             implicitHeight: 150
+
+                            readonly property bool hasImage: Config.settings.systemProfileImageSource !== "" && profileImage.status === Image.Ready
+
                             Image {
+                                id: profileImage
                                 asynchronous: true
                                 anchors.fill: parent
                                 source: Config.settings.systemProfileImageSource
                                 fillMode: Image.PreserveAspectCrop
                                 clip: true
+                                visible: profile.hasImage
+                            }
+
+                            // Placeholder until a picture is set in settings.json.
+                            Item {
+                                anchors.fill: parent
+                                visible: !profile.hasImage
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: Config.colors.shadow
+                                    opacity: 0.35
+                                }
+                                Text {
+                                    anchors.centerIn: parent
+                                    font.family: iconFont.name
+                                    font.pixelSize: 72
+                                    opacity: 0.35
+                                    color: Config.colors.text
+                                    text: "\ue30c"          // desktop_windows
+                                }
                             }
 
                             Rectangle {
@@ -167,6 +193,7 @@ PopupWindow {
                         spacing: 8
                         implicitWidth: content.width
 
+                        // Terminal tools, stacked beside the big launchers.
                         Item {
                             implicitWidth: 150
                             implicitHeight: 60
@@ -175,6 +202,65 @@ PopupWindow {
                                 color: "transparent"
                                 border.color: Config.colors.outline
                                 border.width: 1
+                            }
+                            GridLayout {
+                                anchors.centerIn: parent
+                                columns: 2
+                                rowSpacing: 4
+                                columnSpacing: 4
+
+                                Repeater {
+                                    model: [
+                                        {
+                                            "glyph": "\ue2c7",
+                                            "tool": Config.settings.execCommands.tuiFiles
+                                        },
+                                        {
+                                            "glyph": "\ue63e",
+                                            "tool": Config.settings.execCommands.tuiNetwork
+                                        },
+                                        {
+                                            "glyph": "\ue050",
+                                            "tool": Config.settings.execCommands.tuiAudio
+                                        },
+                                        {
+                                            "glyph": "\ue9e4",
+                                            "tool": Config.settings.execCommands.tuiPerformance
+                                        }
+                                    ]
+
+                                    Button {
+                                        id: tuiButton
+                                        required property var modelData
+
+                                        implicitWidth: 24
+                                        implicitHeight: 24
+
+                                        onClicked: () => {
+                                            root.launchTui(modelData.tool);
+                                            root.closeCallback();
+                                        }
+
+                                        background: Rectangle {
+                                            anchors.fill: parent
+                                            color: tuiHover.hovered ? Config.colors.shadow : "transparent"
+                                            border.width: 1
+                                            border.color: Config.colors.outline
+                                        }
+                                        Text {
+                                            anchors.centerIn: parent
+                                            font.family: iconFont.name
+                                            font.pixelSize: 15
+                                            color: tuiHover.hovered ? Config.colors.accent : Config.colors.text
+                                            text: tuiButton.modelData.glyph
+                                        }
+                                        HoverHandler {
+                                            id: tuiHover
+                                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                            cursorShape: Qt.PointingHandCursor
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -185,207 +271,77 @@ PopupWindow {
                             RowLayout {
                                 spacing: 14
 
-                                Button {
-                                    id: filesButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
+                                Repeater {
+                                    model: [
+                                        {
+                                            "glyph": "\ue2c7",
+                                            "action": "files"
+                                        },
+                                        {
+                                            "glyph": "\ueb8e",
+                                            "action": "terminal"
+                                        },
+                                        {
+                                            "glyph": "\ue8b8",
+                                            "action": "settings"
+                                        },
+                                        {
+                                            "glyph": "\uf418",
+                                            "action": "power"
+                                        }
+                                    ]
 
-                                    onClicked: () => {
-                                        Quickshell.execDetached(Config.settings.execCommands.files);
-                                        root.closeCallback();
-                                    }
+                                    Button {
+                                        id: bigButton
+                                        required property var modelData
 
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse0.hovered ? (0.2 + (filesButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\ue2c7"
-                                    }
-                                    HoverHandler {
-                                        id: mouse0
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
-                                    }
-                                }
-                                Button {
-                                    id: terminalButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
+                                        implicitHeight: 60
+                                        implicitWidth: 60
 
-                                    onClicked: () => {
-                                        Quickshell.execDetached(Config.settings.execCommands.terminal);
-                                        root.closeCallback();
-                                    }
+                                        onClicked: () => {
+                                            root.runAction(modelData.action);
+                                        }
 
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse.hovered ? (0.2 + (terminalButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\ueb8e"
-                                    }
-                                    HoverHandler {
-                                        id: mouse
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
-                                    }
-                                }
-                                Button {
-                                    id: settingsButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
-
-                                    onClicked: () => {
-                                        Config.openSettingsWindow = true;
-                                        root.closeCallback();
-                                    }
-
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse2.hovered ? (0.2 + (settingsButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\ue8b8"
-                                    }
-                                    HoverHandler {
-                                        id: mouse2
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
-                                    }
-                                }
-                                Button {
-                                    id: powerButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
-
-                                    onClicked: () => {
-                                        root.closeCallback();
-                                    }
-
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse3.hovered ? (0.2 + (powerButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\uf418"
-                                    }
-                                    HoverHandler {
-                                        id: mouse3
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
+                                        background: Rectangle {
+                                            anchors.fill: parent
+                                            color: Config.colors.outline
+                                            opacity: bigHover.hovered ? (0.2 + (bigButton.pressed ? 0.2 : 0.0)) : 0.1
+                                            border.width: 1
+                                        }
+                                        NewBorder {
+                                            commonBorderWidth: 2
+                                            commonBorder: false
+                                            lBorderwidth: 2
+                                            rBorderwidth: 2
+                                            tBorderwidth: 2
+                                            bBorderwidth: 2
+                                            zValue: -1
+                                            borderColor: Config.colors.shadow
+                                        }
+                                        NewBorder {
+                                            commonBorderWidth: 2
+                                            commonBorder: false
+                                            lBorderwidth: 2
+                                            rBorderwidth: 0
+                                            tBorderwidth: 2
+                                            bBorderwidth: 0
+                                            zValue: -1
+                                            opacity: 0.8
+                                            borderColor: Config.colors.highlight
+                                        }
+                                        Text {
+                                            anchors.centerIn: parent
+                                            font.family: iconFont.name
+                                            font.pixelSize: 48
+                                            opacity: bigHover.hovered ? 0.85 : 0.4
+                                            color: bigHover.hovered && bigButton.modelData.action === "power" ? Config.colors.urgent : (bigHover.hovered ? Config.colors.accent : Config.colors.text)
+                                            text: bigButton.modelData.glyph
+                                        }
+                                        HoverHandler {
+                                            id: bigHover
+                                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                            cursorShape: Qt.PointingHandCursor
+                                        }
                                     }
                                 }
                             }
@@ -394,6 +350,7 @@ PopupWindow {
                 }
             }
         }
+
 
         /*=== Animations ===*/
         OpacityAnimator {
@@ -413,6 +370,34 @@ PopupWindow {
             easing.type: Easing.InOutQuad
             onFinished: root.visible = false
         }
+    }
+
+    /* Run one of the four big launcher buttons. */
+    function runAction(action) {
+        switch (action) {
+        case "files":
+            Quickshell.execDetached(Config.settings.execCommands.files);
+            break;
+        case "terminal":
+            Quickshell.execDetached(Config.settings.execCommands.terminal);
+            break;
+        case "settings":
+            Config.openSettingsWindow = true;
+            break;
+        case "power":
+            // Handed to the session manager rather than run directly, so it
+            // respects inhibitors and whatever the distro wired up.
+            Quickshell.execDetached(["sh", "-c", "loginctl poweroff || systemctl poweroff"]);
+            break;
+        }
+        root.closeCallback();
+    }
+
+    /* Open a terminal tool in the configured terminal. */
+    function launchTui(tool) {
+        if (!tool || tool === "")
+            return;
+        Quickshell.execDetached(["sh", "-c", `${Config.settings.execCommands.terminal} -e ${tool}`]);
     }
 
     function openStartMenu() {

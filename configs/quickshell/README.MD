@@ -1,4 +1,4 @@
-# Linux Retroism | Quickshell Frontend
+# Linux Thinkpadism | Quickshell Frontend
 
 Before going into details:
 

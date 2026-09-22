@@ -1,0 +1,4 @@
+module Services
+singleton SysMon 1.0 SysMon.qml
+singleton Battery 1.0 Battery.qml
+singleton Wallpapers 1.0 Wallpapers.qml

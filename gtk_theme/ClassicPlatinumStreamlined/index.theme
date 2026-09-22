@@ -7,6 +7,6 @@ Encoding=UTF-8
 [X-GNOME-Metatheme]
 GtkTheme=Mac OS 9 Classic
 MetacityTheme=Mac OS 9 Classic
-IconTheme=RetroismIcons
+IconTheme=ThinkpadismIcons
 CursorTheme=
 ButtonLayout=close,minimize,maximize:

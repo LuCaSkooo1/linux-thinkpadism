@@ -4,3 +4,7 @@ TaskbarButton 1.0 TaskbarButton.qml
 Workspaces 1.0 Workspaces.qml
 ClockWidget 1.0 ClockWidget.qml
 SysTray 1.0 SysTray.qml
+BatteryWidget 1.0 BatteryWidget.qml
+PerformanceWidget 1.0 PerformanceWidget.qml
+QuickTools 1.0 QuickTools.qml
+Tooltip 1.0 Tooltip.qml
