@@ -44,8 +44,9 @@ between machines lives in a single `machine.nix`.
 
 ## Installing on a fresh NixOS machine
 
-From a blank disk to the desktop. You edit **two files**: `machine.nix`, and
-your own hardware config.
+From a blank disk to the desktop. You edit **two files** — `machine.nix` and
+your own hardware config — and keep both on a branch of your own, so the
+published rice stays generic.
 
 ### 1. Install NixOS, minimally
 
@@ -63,21 +64,49 @@ cd ~/thinkpadism
 
 Anywhere works — `~/thinkpadism` is just what the rest of these steps assume.
 
-### 3. Drop in your hardware config
+### 3. Make a branch for this machine
 
-This is the one file in the repo that is specific to *your* disks. The
-committed one is a placeholder with fake UUIDs and will not boot:
+Do this **before** you edit anything. Two of the files you are about to touch
+belong to your machine and must never be published, and the tidiest way to
+guarantee that is to keep them on a branch you never push:
+
+```sh
+git checkout -b local
+```
+
+Your machine lives on `local` from now on. Pulling in rice updates later is
+one command (step 8), and nothing you commit here can reach GitHub by
+accident.
+
+> Why a branch and not `.gitignore`? Because **Nix flakes only see
+> git-tracked files** — a `.gitignore`d `hardware-configuration.nix` would be
+> invisible to the build, and you would get the placeholder instead, silently.
+> So the files have to be committed; the only question is *where*.
+
+### 4. Drop in your hardware config
+
+The one file in the repo that describes *your* disks. The committed one is a
+placeholder with fake UUIDs and will not boot:
 
 ```sh
 sudo nixos-generate-config --show-hardware-config \
   > hosts/thinkpad/hardware-configuration.nix
+
+grep by-uuid hosts/thinkpad/hardware-configuration.nix   # sanity check
+```
+
+Those UUIDs should be real, not `00000000-0000-...`.
+
+```sh
+git add hosts/thinkpad/hardware-configuration.nix
+git commit -m "local: this machine's hardware config"
 ```
 
 > **Booting in legacy BIOS mode rather than UEFI?** Open
 > `hosts/thinkpad/default.nix` and swap the `systemd-boot` block for the
 > commented-out GRUB one just below it.
 
-### 4. Edit `machine.nix`
+### 5. Edit `machine.nix`
 
 Everything that differs between machines is in this one file:
 
@@ -104,13 +133,11 @@ rather than following step 1, also set `initialPassword` — the account is
 created from scratch in that case, and without it there is no password and
 the greeter will not let you in. Change it with `passwd` after first login.
 
-**On a different ThinkPad?** Change `nixosHardwareModule` to your model —
-`"lenovo-thinkpad-x220"`, `"lenovo-thinkpad-t430"`, and so on; the list is in
-[nixos-hardware](https://github.com/NixOS/nixos-hardware#devices). Set it to
-`null` on a machine that isn't covered: everything still works, you just lose
-the per-model tuning.
+```sh
+git commit -am "local: machine settings"
+```
 
-### 5. Build
+### 6. Build
 
 ```sh
 sudo nixos-rebuild test --flake .#t420     # try it, without touching the bootloader
@@ -135,24 +162,6 @@ downloading a desktop.
 > `sudo NIX_CONFIG="experimental-features = nix-command flakes" nixos-rebuild ...`
 > After the first successful switch this config enables them permanently.
 
-### 6. About `flake.lock`
-
-If `flake.lock` is in the repo you just cloned, you get the exact package
-revisions this rice was built and tested against — nothing to do.
-
-If it is missing, the build generated one against whatever `nixpkgs-unstable`
-looked like today. That works, but it is not the tested set. Either way, your
-`flake.lock` now pins your machine, and you should leave it alone until you
-deliberately want newer packages:
-
-```sh
-update      # nix flake update
-rebuild     # sudo nixos-rebuild switch --flake <flakePath>
-```
-
-If an update breaks something, the previous generation is still in the boot
-menu, and `git checkout flake.lock && rebuild` puts you back.
-
 ### 7. Check the panel name
 
 Log in, open a terminal, and run:
@@ -162,23 +171,61 @@ hyprctl monitors
 ```
 
 Most T420s report `LVDS-1`; some report `eDP-1`. If yours differs from what
-you set, fix `monitor` in `machine.nix` and `rebuild` — the lid-switch binds
-and the monitor rule both use it.
+you set, fix `monitor` in `machine.nix`, commit, and `rebuild` — the
+lid-switch binds and the monitor rule both use it.
 
-### If you fork this
+### 8. Living with it
 
-Commit `flake.lock` once it builds. That is the file that makes your fork
-reproducible: anyone who clones it then gets the exact package set you
-verified, rather than whatever upstream looks like the day they build.
+Add your own packages and services in the two files set aside for it —
+`hosts/thinkpad/local.nix` and `home/local.nix`, covered under
+[Adding things later](#adding-things-later) — then:
 
 ```sh
-git add -f flake.lock && git commit -m "Lock inputs" && git push
+git commit -am "local: ..."
+rebuild
 ```
 
-Re-run `nix flake update` and commit the result whenever you want to move
-forward deliberately.
+To pull in changes to the rice itself:
 
-### Using it as a module instead
+```sh
+git fetch origin
+git rebase origin/main      # or whichever branch you cloned
+```
+
+Your commits replay on top of the new upstream. If a file you changed also
+changed upstream, git stops and asks; resolve it, `git add` the file, and
+`git rebase --continue`.
+
+---
+
+## Which files are yours
+
+Three files in this repo are machine-specific, and they do not all belong in
+the same place. Getting this wrong is the one thing most likely to cause you
+grief, so:
+
+| File | Branch | Push it? |
+| --- | --- | --- |
+| `hosts/thinkpad/hardware-configuration.nix` | `local` | **No.** Your disk UUIDs. Useless to anyone else and will not boot their machine. |
+| `hosts/thinkpad/local.nix`, `home/local.nix` | `local` | **No.** Your packages and services. |
+| `machine.nix` | `local` | Your call — it is username, hostname and timezone. Harmless but pointless to publish. |
+| `flake.lock` | `main` | **Yes.** The opposite case: it is what makes the repo reproducible for everyone who clones it. |
+
+`flake.lock` pins the exact revision of every input. Published, it means a
+stranger who clones your repo builds the package set you actually tested,
+rather than whatever upstream looks like that day. If you fork this, commit
+it from `main` once your build is good:
+
+```sh
+git checkout main           # or whichever branch you cloned
+git add flake.lock && git commit -m "Lock inputs" && git push
+git checkout local
+```
+
+Move it forward deliberately, not incidentally: `nix flake update`, rebuild,
+and commit the new lock once you are satisfied it still works.
+
+## Using it as a module instead
 
 If you already have a NixOS configuration and just want pieces of this, the
 flake exports `nixosModules.thinkpadism`, `homeManagerModules.thinkpadism`
@@ -416,30 +463,8 @@ things that are yours rather than the rice's.
 > `.gitignore`d: an ignored file here would simply not exist as far as the
 > build is concerned.
 
-### Keeping your own changes local
-
-Because `local.nix` has to be tracked, "don't publish it" is a git question
-rather than a `.gitignore` question. Work on a branch you never push:
-
-```sh
-git checkout -b local          # once
-# ... edit local.nix, rebuild, commit whenever you like
-git commit -am "local: add docker"
-```
-
-Your machine stays on `local` forever. To pick up rice updates:
-
-```sh
-git fetch origin
-git rebase origin/main
-```
-
-And if you write something worth publishing, put that commit on `main`
-instead — `git checkout main`, make it there, push, then rebase `local` on
-top. Everything on `local` stays on your disk.
-
-If you are the only person who will ever see the repo, you can skip all of
-this and just commit to `main` without pushing.
+Both files sit on your `local` branch, so none of this reaches GitHub — see
+[Which files are yours](#which-files-are-yours).
 
 ---
 
