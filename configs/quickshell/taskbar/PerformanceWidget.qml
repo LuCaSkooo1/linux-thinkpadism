@@ -10,9 +10,13 @@ import "../services" as Services
  * Each metric is a glyph plus a value, with a thin red load bar underneath
  * that fills as the machine gets busier. Clicking anywhere on the widget
  * opens the TUI system monitor. */
-RowLayout {
+Item {
     id: root
-    spacing: 8
+
+    // Sized by the row inside it, so the taskbar's own layout still measures
+    // this widget correctly.
+    implicitWidth: metrics.implicitWidth
+    implicitHeight: Math.max(20, metrics.implicitHeight)
     visible: Config.settings.bar.showPerformance
 
     // A single metric: icon, number, and a load bar.
@@ -75,37 +79,43 @@ RowLayout {
         }
     }
 
-    Metric {
-        id: cpu
-        glyph: ""                 // memory (chip)
-        label: Services.SysMon.cpuPercent + "%"
-        load: Services.SysMon.cpuPercent
-    }
+    RowLayout {
+        id: metrics
+        anchors.fill: parent
+        spacing: 8
 
-    Metric {
-        id: ram
-        glyph: ""                 // memory_alt (RAM sticks)
-        label: Services.SysMon.memPercent + "%"
-        load: Services.SysMon.memPercent
-    }
+        Metric {
+            id: cpu
+            glyph: "\ue322"                 // memory (chip)
+            label: Services.SysMon.cpuPercent + "%"
+            load: Services.SysMon.cpuPercent
+        }
 
-    Metric {
-        id: temp
-        // Hidden when no thermal sensor could be found.
-        visible: Services.SysMon.temperature > 0
-        glyph: ""                 // device_thermostat
-        label: Services.SysMon.temperature + "°"
-        // ~45°C idle to ~95°C hot maps onto the bar.
-        load: Math.round((Services.SysMon.temperature - 45) / 50 * 100)
+        Metric {
+            id: ram
+            glyph: "\uf7a3"                 // memory_alt (RAM sticks)
+            label: Services.SysMon.memPercent + "%"
+            load: Services.SysMon.memPercent
+        }
+
+        Metric {
+            id: temp
+            // Hidden when no thermal sensor could be found.
+            visible: Services.SysMon.temperature > 0
+            glyph: "\ue1ff"                 // device_thermostat
+            label: Services.SysMon.temperature + "°"
+            // ~45°C idle to ~95°C hot maps onto the bar.
+            load: Math.round((Services.SysMon.temperature - 45) / 50 * 100)
+        }
     }
 
     // Whole widget is a click target for the TUI monitor.
     MouseArea {
+        id: mouse
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
-        id: mouse
         onClicked: Quickshell.execDetached(["sh", "-c", `${Config.settings.execCommands.terminal} -e ${Config.settings.execCommands.tuiPerformance}`])
     }
 

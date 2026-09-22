@@ -17,3 +17,16 @@ Various other settings can be changed/set by editing the `settings.json` file; a
 those values can also be changed using the settings GUI.
 
 > I am planning on making a GUI for creating and adding your own themes.
+
+## Where settings live
+
+Runtime settings are read from and written to
+`$XDG_CONFIG_HOME/thinkpadism/settings.json` (usually
+`~/.config/thinkpadism/settings.json`), **not** from this directory.
+
+That split exists so the QML can be immutable — under Nix this directory is a
+read-only symlink into the store, and a shell that wrote its settings beside
+its own source could not save a theme or wallpaper change at all.
+
+`configs/thinkpadism/settings.json` in the repo is the seed copied into place
+on first install. The shell writes the file itself if it is missing.

@@ -61,17 +61,19 @@ Scope {
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font.family: fontMonaco.name
-                        font.pixelSize: 28
+                        font.pixelSize: 26
+                        color: Config.colors.text
                         text: "Linux Thinkpadism " + Config.settings.version
                     }
                     Text {
                         anchors.fill: parent
-                        anchors.bottomMargin: 16
+                        anchors.bottomMargin: 12
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignBottom
                         font.family: fontMonaco.name
-                        font.pixelSize: 12
-                        text: "Version 0.1 is very early and does not yet have a proper settings menu.\nPlease look forward for future releases on github ~ diinki"
+                        font.pixelSize: 11
+                        color: Config.colors.text
+                        text: "There is no settings GUI yet. Everything is editable in:\n" + Config.settingsPath
                     }
                 }
             }

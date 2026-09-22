@@ -140,9 +140,25 @@ Singleton {
         settings.currentTheme = name;
     }
 
+    /* Where settings.json lives.
+     *
+     * Deliberately NOT next to the QML. Under Nix the config directory is a
+     * read-only symlink into the store, so a shell that writes its settings
+     * beside its own source cannot save anything -- no theme switch, no
+     * wallpaper choice would survive a restart. Keeping state in
+     * $XDG_CONFIG_HOME/thinkpadism/ leaves the code immutable and the
+     * settings writable, which is what both Nix and a plain install want.
+     */
+    readonly property string settingsPath: {
+        const xdg = Quickshell.env("XDG_CONFIG_HOME");
+        const base = xdg && xdg !== "" ? xdg : Quickshell.env("HOME") + "/.config";
+        return base + "/thinkpadism/settings.json";
+    }
+
     property alias settings: settingsJsonAdapter.settings
     FileView {
-        path: Qt.resolvedUrl("./settings.json")
+        id: settingsFile
+        path: root.settingsPath
         // when changes are made on disk, reload the file's content
         watchChanges: true
         onFileChanged: reload()
@@ -151,7 +167,9 @@ Singleton {
 
         onLoadFailed: error => {
             if (error == FileViewError.FileNotFound) {
-                writeAdapter();
+                // First run: make sure the directory exists before writing the
+                // defaults into it.
+                settingsDirInit.running = true;
             }
         }
 
@@ -201,6 +219,19 @@ Singleton {
                     console.info("Updated theme to: " + currentTheme);
                 }
             }
+        }
+    }
+
+    // Creates $XDG_CONFIG_HOME/thinkpadism/ on first run, then writes the
+    // default settings into it.
+    Process {
+        id: settingsDirInit
+        command: ["mkdir", "-p", root.settingsPath.substring(0, root.settingsPath.lastIndexOf("/"))]
+        onExited: (code, status) => {
+            if (code === 0)
+                settingsFile.writeAdapter();
+            else
+                console.warn("Could not create settings directory for " + root.settingsPath);
         }
     }
 }

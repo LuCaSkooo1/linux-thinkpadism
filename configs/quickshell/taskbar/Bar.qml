@@ -72,8 +72,10 @@ Scope {
                 component SunkenWell: Item {
                     default property alias contents: wellContent.data
 
+                    // No anchors: these sit inside a RowLayout, which manages
+                    // their position. The layout centres them via its own
+                    // verticalCenter anchor.
                     implicitHeight: taskbar.height - 8
-                    anchors.verticalCenter: parent ? parent.verticalCenter : undefined
 
                     Rectangle {
                         anchors.fill: parent
@@ -123,7 +125,7 @@ Scope {
                     TaskbarButton {
                         id: themeMenuButton
                         isToggled: root.currentPopup == Config.SystemPopup.ThemePicker
-                        iconFontValue: ""
+                        iconFontValue: "\ue3ae"
                         onClicked: taskbar.togglePopup(Config.SystemPopup.ThemePicker)
                     }
 
@@ -201,7 +203,7 @@ Scope {
                 TaskbarButton {
                     id: appLauncherButton
                     isToggled: root.currentPopup == Config.SystemPopup.AppLauncher
-                    iconFontValue: ""
+                    iconFontValue: "\ue8b6"
                     anchors.centerIn: parent
                     onClicked: taskbar.togglePopup(Config.SystemPopup.AppLauncher)
                 }

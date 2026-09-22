@@ -21,30 +21,40 @@ RowLayout {
     }
 
     Text {
+        id: batteryIcon
         font.family: iconFont.name
         font.pixelSize: Config.settings.bar.fontSize + 6
         text: Services.Battery.icon
         color: root.stateColor
         verticalAlignment: Text.AlignVCenter
+    }
 
-        // Pulse when the charge gets dangerous. Static otherwise, in keeping
-        // with the rest of the bar.
-        SequentialAnimation on opacity {
-            running: Services.Battery.critical
-            loops: Animation.Infinite
-            NumberAnimation {
-                from: 1.0
-                to: 0.35
-                duration: 800
-            }
-            NumberAnimation {
-                from: 0.35
-                to: 1.0
-                duration: 800
-            }
-            onRunningChanged: if (!running)
-                parent.opacity = 1.0
+    // Pulse when the charge gets dangerous. Static otherwise, in keeping with
+    // the rest of the bar. Declared outside the Text and targeted explicitly,
+    // since an Animation has no `parent` to fall back on.
+    SequentialAnimation {
+        id: criticalPulse
+        running: Services.Battery.critical
+        loops: Animation.Infinite
+
+        NumberAnimation {
+            target: batteryIcon
+            property: "opacity"
+            from: 1.0
+            to: 0.35
+            duration: 800
         }
+        NumberAnimation {
+            target: batteryIcon
+            property: "opacity"
+            from: 0.35
+            to: 1.0
+            duration: 800
+        }
+
+        // Leave the glyph fully visible when the pulse stops mid-fade.
+        onRunningChanged: if (!running)
+            batteryIcon.opacity = 1.0
     }
 
     Text {

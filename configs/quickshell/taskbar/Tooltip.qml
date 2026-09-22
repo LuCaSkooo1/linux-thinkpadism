@@ -33,8 +33,15 @@ PopupWindow {
 
     anchor.window: taskbar
     anchor.rect.x: {
+        // mapToItem is not a reactive binding, so name shouldShow and the
+        // anchor item's own geometry here: that re-runs this when the tooltip
+        // is about to appear and whenever the bar relayouts, rather than
+        // leaving a position computed before the first layout pass.
+        shouldShow;
         if (!anchorItem)
             return 0;
+        anchorItem.x;
+        anchorItem.width;
         const centre = anchorItem.mapToItem(null, anchorItem.width / 2, 0).x;
         // Keep the tooltip on screen at either end of the bar.
         return Math.max(4, Math.min(taskbar.width - implicitWidth - 4, centre - implicitWidth / 2));

@@ -1,110 +1,216 @@
 <div align="center">
 
-# <img src="https://media3.giphy.com/media/l4FGr7tMjH3ajuwy4/giphy.gif" width="4%"> Linux Retroism <img src="https://media3.giphy.com/media/l4FGr7tMjH3ajuwy4/giphy.gif" width="4%">
+# Linux Thinkpadism
+
+**A red-accented retro desktop for Hyprland, tuned for NixOS and ThinkPads.**
 
 </div>
 
 <div align="center">
 
-<a href="https://discord.gg/gleep">![badge](https://img.shields.io/badge/discord-262622?style=for-the-badge&logo=discord&logoColor=262622&logoSize=auto&color=e2e2d3) </a>
-<a href="https://ko-fi.com/diinki">![badge](https://img.shields.io/badge/tip-262622?style=for-the-badge&logo=kofi&logoColor=262622&logoSize=auto&color=e2e2d3) </a>
-<a href="https://youtube.com/@diinkikot">![badge](https://img.shields.io/badge/youtube_video-262622?style=for-the-badge&logo=youtube&logoColor=262622&logoSize=auto&color=e2e2d3) </a>
-
-</div>
-
-<div align="center">
-
-▐ **Linux Retroism is a Linux-rice based on the 1980-1990's user-interface aesthetic** ▌
+A fork of [Linux Retroism](https://github.com/diinki/linux-retroism) by diinki,
+reworked around a dark/light red theme, laptop-first defaults, and a flake with
+a Home Manager module.
 
 </div>
 
 ![image](./screenshots/default.png)
 
-| wallpaper by 96YOTTEA              | wallpaper: Metropolis             |
-| ---------------------------------- | --------------------------------- |
-| ![image](./screenshots/cherry.png) | ![image](./screenshots/yorha.png) |
-|                                    |                                   |
+> The screenshots still show upstream's teal default theme. New ones for the red
+> light/dark themes are still to be taken.
 
-<br>
+---
 
-### Features (v0.1) 🛈
+## What this fork changes
 
-- Automatic installer (`install.sh` script) with backup support
-- Fully quickshell-based front-end (taskbar, app launcher, settings menu, etc)
-- Theme support & Built-in theme switcher
-- Icon theme & GTK theme
+| | |
+| --- | --- |
+| **Theming** | `thinkpad-light` and `thinkpad-dark`, both red-accented, with a one-click toggle |
+| **Bar** | Battery, clock + date, and live CPU/RAM/temperature readouts |
+| **Workspaces** | A fixed 1–10 strip that never reflows, with occupied/focused/urgent states |
+| **Appearance menu** | Theme swatches *and* a wallpaper switcher, applied live |
+| **Terminal tools** | One-click `yazi`, `nmtui`, `wiremix` and `btop` from the bar and start menu |
+| **Icons** | The whole icon theme recolored blue → red, red folders included |
+| **Hyprland** | Touchpad, trackpoint, lid switch, media keys, idle and lock config |
+| **NixOS** | A flake and a Home Manager module that wire all of the above up |
 
-<br>
+---
 
-### Dependencies ✓
+## Install on NixOS (flake + Home Manager)
 
-You can use either Hyprland or SwayFX/Sway, although I actively use & debug on hyprland. The install script
-will let you know if any dependencies are missing.
+Add the flake as an input:
 
-In general, you must install these or else things may break & not work.
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    thinkpadism.url = "github:LuCaSkooo1/linux-thinkpadism";
+  };
+}
+```
 
-<div style="border-left: 4px solid #c8bfa1ff; padding: 12px 100px 1px 12px; background-color: #0000003e; margin-bottom: 8px">
-<strong>Window Manager:</strong><br>
+Then enable the module in your Home Manager configuration:
 
-`Hyprland` (preferred) or `SwayFX` (less support) | `hyprpaper` or `swaybg`
+```nix
+{
+  imports = [inputs.thinkpadism.homeManagerModules.default];
 
-</div>
+  programs.thinkpadism = {
+    enable = true;
+    theme = "thinkpad-dark";
 
-<div style="border-left: 4px solid #c8bfa1ff; padding: 12px 100px 1px 12px; background-color: #0000003e; margin-bottom: 8px">
-<strong>Applications:</strong><br>
+    # Everything below is optional; these are the defaults.
+    terminal = "kitty";
+    tools = {
+      files = "yazi";
+      network = "nmtui";      # use "impala" if you run iwd rather than NetworkManager
+      audio = "wiremix";
+      performance = "btop";
+    };
 
-`nemo`, `kitty`, `nwg-look`, `quickshell`
+    # Monitor layout and keyboard layout belong here: Hyprland lets later
+    # lines win, and this block is appended to the shipped config.
+    hyprland.extraConfig = ''
+      monitor = eDP-1, 1920x1200@60, 0x0, 1.5
+      input:kb_layout = us
+    '';
+  };
+}
+```
 
-</div>
+On the system side you need Hyprland itself, plus a couple of daemons the shell
+expects:
 
-<div style="border-left: 4px solid #c8bfa1ff; padding: 12px 4px 1px 12px; background-color: #0000003e; margin-bottom: 8px">
-<strong>Utilities:</strong><br>
+```nix
+{
+  programs.hyprland.enable = true;
 
-`grim`, `slurp`, `swappy`, `hyprshot`, `wl-clipboard`, `mako`, `dconf`, `jq`, `socat`,
+  # Battery readout. The shell falls back to reading /sys directly if this is
+  # off, but upower aggregates dual ThinkPad batteries properly.
+  services.upower.enable = true;
 
-</div>
+  # Volume keys and the audio mixer.
+  services.pipewire = {
+    enable = true;
+    pulse.enable = true;
+  };
 
-<br>
+  # Used by nmtui and the network button.
+  networking.networkmanager.enable = true;
+}
+```
 
-### Download & Installation 🡇
+Then `home-manager switch` and log into Hyprland.
 
-<div style="border-left: 4px solid #c8bfa1ff; padding: 12px 4px 1px 2px; background-color: #0000003e; margin-bottom: 12px">
+### Module options
 
-- After you've installed or cloned the repo, simply run the included `install.sh` script.
-- Note that you must still manually move the GTK theme and Icon
-  theme to `~/.local/share/icons` and `~/.local/share/themes`
-  respectively. You can set them to be active with the nwg-look
-  GUI.
-- To update, simply get a newer version, and run the `install.sh` script once more.
-- You can also manually move the config directories if you wish to manually install.
-</div>
+| Option | Default | Notes |
+| --- | --- | --- |
+| `enable` | `false` | |
+| `theme` | `"thinkpad-light"` | Seeds `settings.json` on first activation only |
+| `wallpaperDirectory` | `~/Pictures/Wallpapers` | What the Appearance menu scans |
+| `installWallpapers` | `true` | One-time copy; deletions stick |
+| `terminal` | `"kitty"` | Also hosts the TUI tools |
+| `tools.{files,network,audio,performance}` | yazi/nmtui/wiremix/btop | |
+| `installPackages` | `true` | Set false to manage deps yourself |
+| `hyprland.enable` | `true` | |
+| `hyprland.extraConfig` | `""` | Appended to `hyprland.conf` |
+| `kitty.enable` | `true` | |
+| `gtk.enable` | `true` | Sets GTK + icon theme, and Qt to follow GTK |
 
-I recommend getting versions from the `releases` page, but you can also git clone the repo if you
-want the latest changes at a higher risk.
+### Just the packages
 
-The script will take care of everything and will create a backups of all
-existing config files that it would replace.
+```sh
+nix run github:LuCaSkooo1/linux-thinkpadism      # run the shell
+nix build github:LuCaSkooo1/linux-thinkpadism#thinkpadism-icons
+nix develop                                      # dev shell with qmlls and Pillow
+```
 
-<br>
+---
 
-### ✦ Notes & TODO Lists
+## Install on other distros
 
-I recommend using Hyprland, as there are some issues sway has with NVIDIA GPUs in my experience.
-I will attempt to add fixes to sway if any bugs occur.
+Run `./install.sh`. It checks dependencies, backs up any config it would
+replace, copies everything into `~/.config/`, and drops the wallpapers into
+`~/Pictures/Wallpapers`.
 
-Both the Icon theme and GTK theme are very early, I will continue to edit and improve them in
-future versions.
+Re-running it is safe: `~/.config/thinkpadism/settings.json` is seeded once and
+then left alone, so your theme and wallpaper survive an update.
 
-**v0.2 TODO List:**
+The GTK and icon themes still have to be moved by hand — to
+`~/.local/share/themes` and `~/.local/share/icons` respectively — and selected
+with `nwg-look`.
 
-- [ ] Update GTK Theme to be less janky.
-- [ ] Higher res icon theme and more icons.
-- [ ] Proper settings menu, change font sizes, font, wallpapers, etc.
-- [ ] Refactor quickshell code where need be.
-- [ ] Better laptop support (battery indicator)
-- [ ] UI/UX Improvements
+**Required:** `hyprland` (or `swayfx`), `hyprpaper` (or `swaybg`), `quickshell`,
+`kitty`, `nemo`, `nwg-look`, `hyprshot` (or `grim`/`slurp`/`swappy`), `mako`,
+`dconf`, `jq`, `socat`
 
-### ✦ License
+**Optional but recommended:** `yazi`, `networkmanager` (for `nmtui`), `wiremix`,
+`btop`, `brightnessctl`, `playerctl`, `wireplumber`, `hypridle`, `hyprlock`
 
-This project is licensed under the permissive MIT license, which is included in the root directory
-of this repository.
+---
+
+## Keybinds
+
+`SUPER` is the modifier throughout.
+
+| Keys | Action |
+| --- | --- |
+| `SUPER` + `Return` | Terminal |
+| `SUPER` + `D` | App launcher |
+| `SUPER` + `E` | File manager |
+| `SUPER` + `B` | Browser |
+| `SUPER` + `T` | Appearance menu (themes + wallpapers) |
+| `SUPER` + `SHIFT` + `T` | Toggle dark/light |
+| `SUPER` + `SHIFT` + `E` / `N` / `A` / `P` | Files / network / audio / performance TUI |
+| `SUPER` + `Q` | Close window |
+| `SUPER` + `F` | Fullscreen |
+| `SUPER` + `SHIFT` + `SPACE` | Toggle floating |
+| `SUPER` + `1`–`0` | Switch to workspace 1–10 |
+| `SUPER` + `SHIFT` + `1`–`0` | Move window to workspace 1–10 |
+| `SUPER` + arrows / `hjkl` | Move focus |
+| `SUPER` + `CTRL` + arrows | Resize window |
+| `SUPER` + `SHIFT` + `S` | Screenshot a region |
+| `SUPER` + `Escape` | Lock |
+
+Scrolling over the workspace strip cycles workspaces; a three-finger swipe does
+the same.
+
+---
+
+## Configuration
+
+Runtime settings live in `~/.config/thinkpadism/settings.json`, separate from
+the QML so the shell can rewrite them (and so the config can be a read-only Nix
+store path). Themes, the bar's widget toggles, and the commands behind each
+button are all in there.
+
+Colour schemes are defined in `configs/quickshell/Config.qml`. Anything added to
+the `themes` map shows up in the Appearance menu automatically; give it a `dark`
+flag and the usual colour keys.
+
+To re-run the icon recolor after editing the source art:
+
+```sh
+python3 scripts/recolor-icons.py --check   # preview
+python3 scripts/recolor-icons.py           # apply
+```
+
+---
+
+## Credits
+
+Linux Retroism, the base this is forked from, is by
+[diinki](https://github.com/diinki) —
+[repo](https://github.com/diinki/linux-retroism) ·
+[ko-fi](https://ko-fi.com/diinki) · [youtube](https://youtube.com/@diinkikot).
+
+Wallpapers by 96YOTTEA and others, as credited upstream.
+
+## License
+
+MIT, as upstream. See `LICENSE`.

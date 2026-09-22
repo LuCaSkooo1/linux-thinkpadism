@@ -36,7 +36,7 @@ PopupWindow {
         PopupWindowFrame {
             id: themeMenuFrame
             windowTitle: "Appearance"
-            windowTitleIcon: ""
+            windowTitleIcon: "\ue40a"
             windowTitleDecorationWidth: 210
 
             Item {
@@ -70,12 +70,12 @@ PopupWindow {
                             model: [
                                 {
                                     "label": "Light",
-                                    "glyph": "",
+                                    "glyph": "\ue518",
                                     "theme": Config.lightTheme
                                 },
                                 {
                                     "label": "Dark",
-                                    "glyph": "",
+                                    "glyph": "\ue51c",
                                     "theme": Config.darkTheme
                                 }
                             ]
@@ -296,7 +296,7 @@ PopupWindow {
                                 anchors.centerIn: parent
                                 font.family: iconFont.name
                                 font.pixelSize: 14
-                                text: ""          // directory_sync
+                                text: "\ue394"          // directory_sync
                                 color: Config.colors.text
                             }
                             HoverHandler {

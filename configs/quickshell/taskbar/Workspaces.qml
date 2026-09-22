@@ -131,11 +131,13 @@ RowLayout {
 
     // Scrolling anywhere over the strip cycles workspaces, which is the one
     // thing a trackpad makes genuinely pleasant.
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.NoButton
-        onWheel: wheel => {
-            const dir = wheel.angleDelta.y > 0 ? -1 : 1;
+    //
+    // A handler rather than a MouseArea: this is a RowLayout, and an Item
+    // child would be given a cell of its own instead of overlaying the row.
+    WheelHandler {
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => {
+            const dir = event.angleDelta.y > 0 ? -1 : 1;
             const count = Config.settings.bar.workspaceCount;
             let next = workspaces.focusedId + dir;
             if (next < 1)

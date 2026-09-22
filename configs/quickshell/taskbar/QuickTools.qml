@@ -75,22 +75,22 @@ RowLayout {
     }
 
     ToolButton {
-        glyph: ""                 // folder
+        glyph: "\ue2c7"                 // folder
         tool: Config.settings.execCommands.tuiFiles
         tip: "Files — " + Config.settings.execCommands.tuiFiles
     }
     ToolButton {
-        glyph: ""                 // wifi
+        glyph: "\ue63e"                 // wifi
         tool: Config.settings.execCommands.tuiNetwork
         tip: "Network — " + Config.settings.execCommands.tuiNetwork
     }
     ToolButton {
-        glyph: ""                 // volume_up
+        glyph: "\ue050"                 // volume_up
         tool: Config.settings.execCommands.tuiAudio
         tip: "Audio — " + Config.settings.execCommands.tuiAudio
     }
     ToolButton {
-        glyph: ""                 // speed
+        glyph: "\ue9e4"                 // speed
         tool: Config.settings.execCommands.tuiPerformance
         tip: "Performance — " + Config.settings.execCommands.tuiPerformance
     }
