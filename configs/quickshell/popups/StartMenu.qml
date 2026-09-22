@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Controls.Basic
 
 import ".."
+import "../services" as Services
 
 /* NOTE:
 *  This entire module is quite a mess, and is likely going to get a complete re-write.
@@ -120,7 +121,7 @@ PopupWindow {
                                         Text {
                                             font.family: fontMonaco.name
                                             font.pixelSize: 14
-                                            text: Config.settings.systemDetails.osName
+                                            text: root.detail(Config.settings.systemDetails.osName, Services.SysMon.osName, "Linux")
                                             color: Config.colors.text
                                         }
                                     }
@@ -135,7 +136,7 @@ PopupWindow {
                                         Text {
                                             font.family: fontMonaco.name
                                             font.pixelSize: 14
-                                            text: Config.settings.systemDetails.osVersion
+                                            text: root.detail(Config.settings.systemDetails.osVersion, Services.SysMon.osVersion, "")
                                             color: Config.colors.text
                                         }
                                     }
@@ -150,7 +151,7 @@ PopupWindow {
                                         Text {
                                             font.family: fontMonaco.name
                                             font.pixelSize: 14
-                                            text: Config.settings.systemDetails.ram
+                                            text: root.detail(Config.settings.systemDetails.ram, Services.SysMon.memTotalPretty, "")
                                             color: Config.colors.text
                                         }
                                     }
@@ -165,7 +166,7 @@ PopupWindow {
                                         Text {
                                             font.family: fontMonaco.name
                                             font.pixelSize: 14
-                                            text: Config.settings.systemDetails.cpu
+                                            text: root.detail(Config.settings.systemDetails.cpu, Services.SysMon.cpuModel, "")
                                             color: Config.colors.text
                                         }
                                     }
@@ -181,7 +182,7 @@ PopupWindow {
                                         Text {
                                             font.family: fontMonaco.name
                                             font.pixelSize: 14
-                                            text: Config.settings.systemDetails.gpu
+                                            text: root.detail(Config.settings.systemDetails.gpu, Services.SysMon.gpuModel, "")
                                             color: Config.colors.text
                                         }
                                     }
@@ -370,6 +371,18 @@ PopupWindow {
             easing.type: Easing.InOutQuad
             onFinished: root.visible = false
         }
+    }
+
+    /* Pick what to show for one line of the system summary.
+     *
+     * settings.json wins when it has been filled in, otherwise the value
+     * probed from /proc and /etc/os-release, otherwise a placeholder. */
+    function detail(configured, probed, fallback) {
+        if (configured && configured !== "")
+            return configured;
+        if (probed && probed !== "")
+            return probed;
+        return fallback;
     }
 
     /* Run one of the four big launcher buttons. */

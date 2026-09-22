@@ -22,11 +22,11 @@
     "militaryTimeClockFormat": true,
     "setWallpaperToThemeWallpaper": true,
     "systemDetails": {
-      "cpu": "CPU Name",
-      "gpu": "GPU Name",
-      "osName": "NixOS",
-      "osVersion": "unstable",
-      "ram": "Ram"
+      "cpu": "",
+      "gpu": "",
+      "osName": "",
+      "osVersion": "",
+      "ram": ""
     },
     "systemProfileImageSource": "",
     "version": "0.2",

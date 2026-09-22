@@ -196,12 +196,15 @@ Singleton {
                     property string tuiAudio: "wiremix"
                     property string tuiPerformance: "btop"
                 }
+                // Left blank on purpose: the start menu probes /proc and
+                // /etc/os-release for anything not set here. Fill a field in
+                // to override what it found.
                 property JsonObject systemDetails: JsonObject {
-                    property string osName: "NixOS"
-                    property string osVersion: "unstable"
-                    property string ram: "Ram"
-                    property string cpu: "CPU Name"
-                    property string gpu: "GPU Name"
+                    property string osName: ""
+                    property string osVersion: ""
+                    property string ram: ""
+                    property string cpu: ""
+                    property string gpu: ""
                 }
                 property JsonObject bar: JsonObject {
                     property int fontSize: 12

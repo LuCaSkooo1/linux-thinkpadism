@@ -37,6 +37,54 @@ Singleton {
     // startup because the numbering differs between machines.
     property string thermalPath: ""
 
+    /*=== Static system details, probed once at startup ===*/
+    // Used by the start menu when settings.json leaves them blank.
+    property string cpuModel: ""
+    property string gpuModel: ""
+    property string osName: ""
+    property string osVersion: ""
+
+    // Human-readable total memory, e.g. "32 GiB".
+    readonly property string memTotalPretty: memTotal > 0 ? Math.round(memTotalGb) + " GiB" : ""
+
+    Process {
+        id: probeSystem
+        running: true
+        command: ["sh", "-c", `
+            # CPU model, trimmed of the marketing padding Intel puts in it.
+            cpu=$(sed -n 's/^model name[[:space:]]*:[[:space:]]*//p' /proc/cpuinfo | head -1)
+            [ -z "$cpu" ] && cpu=$(sed -n 's/^Model[[:space:]]*:[[:space:]]*//p' /proc/cpuinfo | head -1)
+            cpu=$(echo "$cpu" | sed 's/([RrCc])//g; s/(TM)//g; s/(tm)//g; s/ CPU @.*//; s/  */ /g')
+
+            # GPU: first VGA/3D controller lspci knows about, if lspci exists.
+            gpu=$(lspci 2>/dev/null | sed -n 's/.*VGA compatible controller: //p' | head -1)
+            [ -z "$gpu" ] && gpu=$(lspci 2>/dev/null | sed -n 's/.*3D controller: //p' | head -1)
+
+            # Distro name and version.
+            name=""; version=""
+            if [ -r /etc/os-release ]; then
+                name=$(. /etc/os-release 2>/dev/null && echo "$NAME")
+                version=$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")
+                [ -z "$version" ] && version=$(. /etc/os-release 2>/dev/null && echo "$BUILD_ID")
+            fi
+
+            # One field per line, in a fixed order.
+            echo "$cpu"
+            echo "$gpu"
+            echo "$name"
+            echo "$version"
+        `]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = text.split("\n");
+                root.cpuModel = (lines[0] || "").trim();
+                root.gpuModel = (lines[1] || "").trim();
+                root.osName = (lines[2] || "").trim();
+                root.osVersion = (lines[3] || "").trim();
+            }
+        }
+    }
+
     Timer {
         interval: root.interval
         running: true

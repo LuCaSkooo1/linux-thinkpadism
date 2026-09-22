@@ -189,6 +189,10 @@ the QML so the shell can rewrite them (and so the config can be a read-only Nix
 store path). Themes, the bar's widget toggles, and the commands behind each
 button are all in there.
 
+The start menu's system summary (distro, CPU, RAM, GPU) is probed from `/proc`
+and `/etc/os-release` at startup. Fill in the matching `systemDetails` field to
+override what it found.
+
 Colour schemes are defined in `configs/quickshell/Config.qml`. Anything added to
 the `themes` map shows up in the Appearance menu automatically; give it a `dark`
 flag and the usual colour keys.
