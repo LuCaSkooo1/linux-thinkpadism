@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import ".."
 import "../utils" as Utils
 
@@ -30,6 +31,14 @@ PopupWindow {
     implicitWidth: taskbar.width
     implicitHeight: screenHeight - parentWindow.implicitHeight - 4
     color: "transparent"
+
+    // Give the launcher keyboard focus as soon as it opens (Hyprland focus grab),
+    // and close it when you click anywhere else.
+    HyprlandFocusGrab {
+        id: focusGrab
+        windows: [root]
+        onCleared: root.closeCallback()
+    }
 
     // This is quite hacky, the reason this exists is so the search bar gains immediate focus
     // when you open the AppLauncher.
@@ -126,6 +135,7 @@ PopupWindow {
                                 anchors.fill: parent
                                 font.family: iconFont.name
                                 font.pixelSize: 24
+                                color: Config.colors.text
                                 text: "\ue8b6"
                             }
                         }
@@ -186,6 +196,9 @@ PopupWindow {
                                             Layout.leftMargin: 8
                                             Layout.alignment: Qt.AlignLeft
                                             text: modelData.name
+                                            color: Config.colors.text
+                                            font.family: fontMonaco.name
+                                            elide: Text.ElideRight
                                         }
                                     }
                                     HoverHandler {
@@ -230,9 +243,15 @@ PopupWindow {
         root.currentApps = Utils.AppSearch.fuzzyQuery("A");
         searchInput.text = "";
         openAnimation.start();
+        // Once the popup is mapped: take keyboard focus and put the cursor in the search box.
+        Qt.callLater(() => {
+            focusGrab.active = true;
+            searchInput.forceActiveFocus();
+        });
     }
 
     function closeAppLauncher() {
+        focusGrab.active = false;
         closeAnimation.start();
     }
 }

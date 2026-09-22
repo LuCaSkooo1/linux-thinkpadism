@@ -70,9 +70,9 @@ Singleton {
 
         const p = expand(path);
         if (onHyprland) {
-            // `reload` preloads the new image, sets it on all monitors (the
-            // empty monitor field) and drops the previous one from memory.
-            setter.command = ["hyprctl", "hyprpaper", "reload", `,${p}`];
+            // hyprpaper 0.8+ only understands `wallpaper <monitor>,<path>[,<fit>]`
+            // (`preload`/`reload` are gone); an empty monitor means all of them.
+            setter.command = ["hyprctl", "hyprpaper", "wallpaper", `,${p},cover`];
         } else {
             // swaybg has no IPC, so replace the running instance.
             setter.command = ["sh", "-c", `pkill -x swaybg; swaybg -i '${p.replace(/'/g, "'\\''")}' -m fill &`];

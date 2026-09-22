@@ -387,12 +387,13 @@ PopupWindow {
 
     /* Run one of the four big launcher buttons. */
     function runAction(action) {
+        console.info("StartMenu: " + action);
         switch (action) {
         case "files":
-            Quickshell.execDetached(Config.settings.execCommands.files);
+            Quickshell.execDetached(["sh", "-c", Config.settings.execCommands.files]);
             break;
         case "terminal":
-            Quickshell.execDetached(Config.settings.execCommands.terminal);
+            Quickshell.execDetached(["sh", "-c", Config.settings.execCommands.terminal]);
             break;
         case "settings":
             Config.openSettingsWindow = true;
