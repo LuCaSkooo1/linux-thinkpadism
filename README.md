@@ -44,9 +44,9 @@ between machines lives in a single `machine.nix`.
 
 ## Installing on a fresh NixOS machine
 
-From a blank disk to the desktop. You edit **two files** — `machine.nix` and
-your own hardware config — and keep both on a branch of your own, so the
-published rice stays generic.
+From a blank disk to the desktop. You generate one file describing your disks,
+edit `machine.nix`, and keep both on a branch of your own — so the published
+rice stays generic.
 
 ### 1. Install NixOS, minimally
 
@@ -83,24 +83,28 @@ accident.
 > invisible to the build, and you would get the placeholder instead, silently.
 > So the files have to be committed; the only question is *where*.
 
-### 4. Drop in your hardware config
+### 4. Generate your hardware config
 
-The one file in the repo that describes *your* disks. The committed one is a
-placeholder with fake UUIDs and will not boot:
+This file describes *your* disks, so it is not shipped with the repo — one
+machine's UUIDs will not boot another. Generate it:
 
 ```sh
 sudo nixos-generate-config --show-hardware-config \
   > hosts/thinkpad/hardware-configuration.nix
-
-grep by-uuid hosts/thinkpad/hardware-configuration.nix   # sanity check
 ```
 
-Those UUIDs should be real, not `00000000-0000-...`.
+It is listed in `.gitignore`, so a stray `git add .` cannot push it by
+accident. But flakes only see git-tracked files, so it does still have to be
+committed — force-add it, on the `local` branch you made in step 3:
 
 ```sh
-git add hosts/thinkpad/hardware-configuration.nix
+git add -f hosts/thinkpad/hardware-configuration.nix
 git commit -m "local: this machine's hardware config"
 ```
+
+Forget this and the build stops with an assertion telling you exactly these
+two commands, rather than NixOS's own "you have not defined a root file
+system" from three modules away.
 
 > **Booting in legacy BIOS mode rather than UEFI?** Open
 > `hosts/thinkpad/default.nix` and swap the `systemd-boot` block for the
@@ -206,7 +210,7 @@ grief, so:
 
 | File | Branch | Push it? |
 | --- | --- | --- |
-| `hosts/thinkpad/hardware-configuration.nix` | `local` | **No.** Your disk UUIDs. Useless to anyone else and will not boot their machine. |
+| `hosts/thinkpad/hardware-configuration.nix` | `local` | **No.** Your disk UUIDs. `.gitignore`d, so you need `git add -f`. |
 | `hosts/thinkpad/local.nix`, `home/local.nix` | `local` | **No.** Your packages and services. |
 | `machine.nix` | `local` | Your call — it is username, hostname and timezone. Harmless but pointless to publish. |
 | `flake.lock` | `main` | **Yes.** The opposite case: it is what makes the repo reproducible for everyone who clones it. |
@@ -242,6 +246,7 @@ flake.nix              inputs, the system, the exported modules
 hosts/thinkpad/
   default.nix          the machine: bootloader, user, hardware
   local.nix            YOURS — system packages and services
+  hardware-configuration.nix   YOURS — generated, gitignored, never pushed
 home/
   default.nix          the user: theme choice, programs, git identity
   local.nix            YOURS — your apps and dotfiles
