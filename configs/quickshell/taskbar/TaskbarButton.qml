@@ -44,7 +44,7 @@ Button {
             verticalAlignment: Text.AlignVCenter
             font.pixelSize: root.isToggled ? 32 : 20
             text: root.isToggled ? root.toggledIconFontValue : root.iconFontValue
-            color: root.isToggled ? Config.colors.accent : Config.colors.outline
+            color: root.isToggled ? Config.colors.accent : Config.colors.text
         }
     }
     HoverHandler {

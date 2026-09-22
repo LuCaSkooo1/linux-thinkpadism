@@ -1,6 +1,7 @@
 [Icon Theme]
 Name=ThinkpadismIcons
 Comment=Red-accented retro pixel icon theme for the Thinkpadism desktop.
+Inherits=Adwaita,hicolor
 Directories=places,places/16,places/32,mimes,mimes/16,mimes/32,categories,categories/16,categories/32,devices,devices/16,devices/32,apps,apps/256,apps/16,apps/128,apps/48,apps/32,apps/24,actions,actions/24
 [places]
 Size=48

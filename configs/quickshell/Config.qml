@@ -128,6 +128,14 @@ Singleton {
     // Flip between the configured light and dark themes. If the user is on
     // some other theme entirely (cherry, gleep, ...) we jump to the dark one,
     // since that is the least surprising thing a "dark mode" button can do.
+    // Tell the rest of the desktop whether we're dark or light: GTK4/libadwaita
+    // apps and Firefox (through xdg-desktop-portal) follow this setting.
+    onIsDarkChanged: syncColorScheme()
+    function syncColorScheme() {
+        Quickshell.execDetached(["dconf", "write", "/org/gnome/desktop/interface/color-scheme",
+                                 isDark ? "'prefer-dark'" : "'default'"]);
+    }
+
     function toggleDarkMode() {
         setTheme(isDark ? lightTheme : darkTheme);
     }
