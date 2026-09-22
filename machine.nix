@@ -9,6 +9,16 @@
   # Manager configuration are all built from this.
   username = "lucas";
 
+  # A password for the user account, set only when the account is first
+  # created. Leave it null if you are adding this config to a NixOS
+  # install that already has your user -- the existing password stands.
+  #
+  # Set it if you are running `nixos-install --flake` against a blank
+  # disk, because otherwise the account is created with no password at
+  # all and the greeter will not let you in. Change it with `passwd`
+  # after the first login, and put it back to null.
+  initialPassword = null;
+
   # The machine's hostname, and the name of the flake output that builds
   # it -- so this value is also the `#t420` in:
   #

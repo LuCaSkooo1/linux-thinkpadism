@@ -99,6 +99,11 @@ Everything that differs between machines is in this one file:
 At minimum change `username`, `flakePath` and `timeZone`. The rest has
 sensible defaults, and `monitor` you can fix after first boot (step 7).
 
+If you are installing straight onto a blank disk with `nixos-install --flake`
+rather than following step 1, also set `initialPassword` — the account is
+created from scratch in that case, and without it there is no password and
+the greeter will not let you in. Change it with `passwd` after first login.
+
 **On a different ThinkPad?** Change `nixosHardwareModule` to your model —
 `"lenovo-thinkpad-x220"`, `"lenovo-thinkpad-t430"`, and so on; the list is in
 [nixos-hardware](https://github.com/NixOS/nixos-hardware#devices). Set it to

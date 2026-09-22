@@ -81,6 +81,11 @@
   users.users.${username} = {
     isNormalUser = true;
     description = "Thinkpadism";
+
+    # Only applied when the account is created. On a machine where the
+    # user already exists this is ignored, and `passwd` keeps working
+    # either way (users.mutableUsers is true by default).
+    initialPassword = machine.initialPassword;
     extraGroups = [
       "wheel"
       "networkmanager"
