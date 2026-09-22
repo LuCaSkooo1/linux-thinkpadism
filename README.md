@@ -23,9 +23,10 @@ themes, terminal, editor and power management.
 
 ## What this is
 
-One flake, one command, one machine. `nixos-rebuild switch --flake .#t420`
-builds the system and the user environment together — there is no second
-`home-manager switch` step, and nothing to copy into `~/.config` by hand.
+One flake, one command. `nixos-rebuild switch --flake .#<hostname>` builds the
+system and the user environment together — no second `home-manager switch`
+step, nothing to copy into `~/.config` by hand. Everything that differs
+between machines lives in a single `machine.nix`.
 
 | | |
 | --- | --- |
@@ -41,80 +42,214 @@ builds the system and the user environment together — there is no second
 
 ---
 
-## Installing on a fresh machine
+## Installing on a fresh NixOS machine
 
-This is the path from a blank disk to the desktop.
+From a blank disk to the desktop. You generate one file describing your disks,
+edit `machine.nix`, and keep both on a branch of your own — so the published
+rice stays generic.
 
 ### 1. Install NixOS, minimally
 
-Boot the installer and do a normal minimal install — no desktop environment,
-no display manager. Set a password for your user and reboot into the console.
+Boot the installer and do a normal install — no desktop environment, no
+display manager, nothing extra. Set a password for your user, reboot, and log
+in at the console.
 
-### 2. Get the repo
+### 2. Clone the repo
 
 ```sh
 nix-shell -p git
-git clone https://github.com/LuCaSkooo1/linux-thinkpadism ~/linux-thinkpadism
-cd ~/linux-thinkpadism
+git clone https://github.com/LuCaSkooo1/linux-thinkpadism ~/thinkpadism
+cd ~/thinkpadism
 ```
 
-### 3. Put in your own hardware config
+Anywhere works — `~/thinkpadism` is just what the rest of these steps assume.
 
-This is the **one file** in the repo that is genuinely specific to your disks,
-and the committed one is a placeholder that will not boot:
+### 3. Make a branch for this machine
+
+Do this **before** you edit anything. Two of the files you are about to touch
+belong to your machine and must never be published, and the tidiest way to
+guarantee that is to keep them on a branch you never push:
+
+```sh
+git checkout -b local
+```
+
+Your machine lives on `local` from now on. Pulling in rice updates later is
+one command (step 8), and nothing you commit here can reach GitHub by
+accident.
+
+> Why a branch and not `.gitignore`? Because **Nix flakes only see
+> git-tracked files** — a `.gitignore`d `hardware-configuration.nix` would be
+> invisible to the build, and you would get the placeholder instead, silently.
+> So the files have to be committed; the only question is *where*.
+
+### 4. Generate your hardware config
+
+This file describes *your* disks, so it is not shipped with the repo — one
+machine's UUIDs will not boot another. Generate it:
 
 ```sh
 sudo nixos-generate-config --show-hardware-config \
-  > hosts/t420/hardware-configuration.nix
+  > hosts/thinkpad/hardware-configuration.nix
 ```
 
-### 4. Set your username
+It is listed in `.gitignore`, so a stray `git add .` cannot push it by
+accident. But flakes only see git-tracked files, so it does still have to be
+committed — force-add it, on the `local` branch you made in step 3:
 
-The flake defines it once, near the top:
+```sh
+git add -f hosts/thinkpad/hardware-configuration.nix
+git commit -m "local: this machine's hardware config"
+```
+
+Forget this and the build stops with an assertion telling you exactly these
+two commands, rather than NixOS's own "you have not defined a root file
+system" from three modules away.
+
+> **Booting in legacy BIOS mode rather than UEFI?** Open
+> `hosts/thinkpad/default.nix` and swap the `systemd-boot` block for the
+> commented-out GRUB one just below it.
+
+### 5. Edit `machine.nix`
+
+Everything that differs between machines is in this one file:
 
 ```nix
-username = "lucas";
+{
+  username  = "lucas";        # your login name
+  hostname  = "t420";         # also the flake output name
+  flakePath = "/home/lucas/thinkpadism";   # where you just cloned
+
+  nixosHardwareModule = "lenovo-thinkpad-t420";
+  monitor = "LVDS-1";
+
+  keyboardLayout = "us";
+  timeZone = "Europe/Prague";
+  # ...
+}
 ```
 
-Change it to yours if it differs. Nothing else needs editing.
+At minimum change `username`, `flakePath` and `timeZone`. The rest has
+sensible defaults, and `monitor` you can fix after first boot (step 7).
 
-### 5. Build
+If you are installing straight onto a blank disk with `nixos-install --flake`
+rather than following step 1, also set `initialPassword` — the account is
+created from scratch in that case, and without it there is no password and
+the greeter will not let you in. Change it with `passwd` after first login.
 
 ```sh
-sudo nixos-rebuild switch --flake .#t420
+git commit -am "local: machine settings"
 ```
 
-The first build takes a while — it is compiling nothing, but it is downloading
-a desktop. Afterwards, log in at the greeter.
-
-### 6. Commit the lock file
-
-The first build writes `flake.lock`, pinning the exact revision of every
-input. **Commit it.** That file is what makes this reproducible: with it,
-this repo builds the same desktop on any machine, at any point in the future.
+### 6. Build
 
 ```sh
-git add flake.lock && git commit -m "Lock inputs"
+sudo nixos-rebuild test --flake .#t420     # try it, without touching the bootloader
+sudo nixos-rebuild switch --flake .#t420   # keep it
 ```
 
-To update later: `nix flake update && sudo nixos-rebuild switch --flake .#t420`.
-If an update breaks something, the previous generation is still in the boot
-menu, and `git checkout` on the lock file puts you back.
+Replace `t420` with whatever you set `hostname` to.
+
+`test` activates the new system but leaves the boot menu alone, so if
+something goes wrong you reboot back into what you had. Worth doing for the
+first build.
+
+The first build takes a while. It is compiling almost nothing — it is
+downloading a desktop.
+
+> **`error: flake 'path:/etc/nixos' does not provide attribute ...`**
+> You ran bare `nixos-rebuild switch`, which always reads `/etc/nixos` and
+> never your clone. The `--flake .#<hostname>` part is not optional.
+
+> **`experimental Nix feature 'nix-command' is disabled`**
+> Flakes are not on yet. Prefix the command once:
+> `sudo NIX_CONFIG="experimental-features = nix-command flakes" nixos-rebuild ...`
+> After the first successful switch this config enables them permanently.
 
 ### 7. Check the panel name
 
-Run `hyprctl monitors` and note the output name. On a T420 it is usually
-`LVDS-1`, sometimes `eDP-1`. If yours differs, change it in `home/default.nix`
-(`hyprland.monitor` and the `extraLua` block) — the lid switch binds use it.
+Log in, open a terminal, and run:
+
+```sh
+hyprctl monitors
+```
+
+Most T420s report `LVDS-1`; some report `eDP-1`. If yours differs from what
+you set, fix `monitor` in `machine.nix`, commit, and `rebuild` — the
+lid-switch binds and the monitor rule both use it.
+
+### 8. Living with it
+
+Add your own packages and services in the two files set aside for it —
+`hosts/thinkpad/local.nix` and `home/local.nix`, covered under
+[Adding things later](#adding-things-later) — then:
+
+```sh
+git commit -am "local: ..."
+rebuild
+```
+
+To pull in changes to the rice itself:
+
+```sh
+git fetch origin
+git rebase origin/main      # or whichever branch you cloned
+```
+
+Your commits replay on top of the new upstream. If a file you changed also
+changed upstream, git stops and asks; resolve it, `git add` the file, and
+`git rebase --continue`.
+
+---
+
+## Which files are yours
+
+Three files in this repo are machine-specific, and they do not all belong in
+the same place. Getting this wrong is the one thing most likely to cause you
+grief, so:
+
+| File | Branch | Push it? |
+| --- | --- | --- |
+| `hosts/thinkpad/hardware-configuration.nix` | `local` | **No.** Your disk UUIDs. `.gitignore`d, so you need `git add -f`. |
+| `hosts/thinkpad/local.nix`, `home/local.nix` | `local` | **No.** Your packages and services. |
+| `machine.nix` | `local` | Your call — it is username, hostname and timezone. Harmless but pointless to publish. |
+| `flake.lock` | `main` | **Yes.** The opposite case: it is what makes the repo reproducible for everyone who clones it. |
+
+`flake.lock` pins the exact revision of every input. Published, it means a
+stranger who clones your repo builds the package set you actually tested,
+rather than whatever upstream looks like that day. If you fork this, commit
+it from `main` once your build is good:
+
+```sh
+git checkout main           # or whichever branch you cloned
+git add flake.lock && git commit -m "Lock inputs" && git push
+git checkout local
+```
+
+Move it forward deliberately, not incidentally: `nix flake update`, rebuild,
+and commit the new lock once you are satisfied it still works.
+
+## Using it as a module instead
+
+If you already have a NixOS configuration and just want pieces of this, the
+flake exports `nixosModules.thinkpadism`, `homeManagerModules.thinkpadism`
+and the individual packages. Ignore `machine.nix` and `hosts/` entirely and
+set `services.thinkpadism` / `programs.thinkpadism` in your own config.
 
 ---
 
 ## Layout
 
 ```
-flake.nix              inputs, the t420 system, the exported modules
-hosts/t420/            this machine: bootloader, user, hardware
-home/                  this user: theme choice, monitor, git identity
+machine.nix            EVERYTHING machine-specific — edit this one
+flake.nix              inputs, the system, the exported modules
+hosts/thinkpad/
+  default.nix          the machine: bootloader, user, hardware
+  local.nix            YOURS — system packages and services
+  hardware-configuration.nix   YOURS — generated, gitignored, never pushed
+home/
+  default.nix          the user: theme choice, programs, git identity
+  local.nix            YOURS — your apps and dotfiles
 nix/
   nixos.nix            system module — compositor, portals, power, fonts
   hm/                  home module — theming, programs, Hyprland wiring
@@ -257,8 +392,8 @@ only the CSS leaves black arrows on a black background.
   WebGpu falls back to software without saying so.
 - **Battery.** Charging is capped at 85% and resumes below 75%. On a cell this
   old that is the single biggest thing you can do for its remaining life. Set
-  `thinkpad.batteryThresholds = null` in `hosts/t420` if you need the range
-  more.
+  `thinkpad.batteryThresholds = null` in `hosts/thinkpad` if you need the
+  range more.
 - **Suspend.** `mem_sleep_default=deep`. s2idle on this generation is barely a
   power saving at all.
 - **Blur and animations are off**, everywhere, on purpose. They are the two
@@ -284,10 +419,66 @@ Shell side: `eza`, `bat`, `ripgrep`, `fd`, `fzf`, `zoxide`, `lazygit`,
 
 ---
 
+## Adding things later
+
+Everything lives in this repo. `/etc/nixos/configuration.nix` is not read at
+all once you build with `--flake`, so editing it does nothing.
+
+Two files are set aside for your own machine and are never touched by the
+rice, so `git pull` will not fight you over them:
+
+| | |
+| --- | --- |
+| `hosts/thinkpad/local.nix` | **system** — packages for everyone, services, hardware, firewall. What used to go in `configuration.nix`. |
+| `home/local.nix` | **user** — your apps, shell aliases, dotfiles Home Manager should manage, extra Hyprland binds. |
+
+```nix
+# hosts/thinkpad/local.nix
+{pkgs, ...}: {
+  environment.systemPackages = with pkgs; [vlc qbittorrent];
+  services.printing.enable = true;
+  virtualisation.docker.enable = true;
+}
+```
+
+```nix
+# home/local.nix
+{pkgs, ...}: {
+  home.packages = with pkgs; [discord gimp obsidian];
+  programs.bash.shellAliases.gs = "git status";
+}
+```
+
+Then, from anywhere:
+
+```sh
+rebuild          # alias for: sudo nixos-rebuild switch --flake <flakePath>
+```
+
+Changing the rice itself — themes, keybinds, the bar — means editing the real
+files: `configs/`, `nix/hm/`, `machine.nix`. The two `local.nix` files are for
+things that are yours rather than the rice's.
+
+> **Flakes only see git-tracked files.** Editing an existing file is fine, but
+> a file you *create* is invisible to Nix until you `git add` it — which
+> usually surfaces as a confusing `path ... does not exist`. When something
+> you just wrote seems to be ignored, `git status` first.
+>
+> This is also why the two `local.nix` files are committed rather than
+> `.gitignore`d: an ignored file here would simply not exist as far as the
+> build is concerned.
+
+Both files sit on your `local` branch, so none of this reaches GitHub — see
+[Which files are yours](#which-files-are-yours).
+
+---
+
 ## Customising
 
-Almost everything is an option on `programs.thinkpadism` in `home/default.nix`
-or `services.thinkpadism` in `hosts/t420/default.nix`:
+Machine-specific values — username, hostname, monitor, keyboard, timezone —
+all live in `machine.nix`. Beyond that, almost everything is an option on
+`programs.thinkpadism` in `home/default.nix` or `services.thinkpadism` in
+`hosts/thinkpad/default.nix`:
 
 ```nix
 programs.thinkpadism = {

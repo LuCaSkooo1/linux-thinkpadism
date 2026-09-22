@@ -30,6 +30,19 @@ in {
       '';
     };
 
+    flakePath = mkOption {
+      type = types.str;
+      default = "${config.home.homeDirectory}/linux-thinkpadism";
+      defaultText = literalExpression ''"''${config.home.homeDirectory}/linux-thinkpadism"'';
+      description = ''
+        Where this repository lives on disk.
+
+        Only used for convenience: the `rebuild`, `rebuild-test` and
+        `update` aliases, and the keymap that opens the flake in Neovim.
+        Nothing about the build depends on it.
+      '';
+    };
+
     wallpaperDirectory = mkOption {
       type = types.str;
       default = "${config.home.homeDirectory}/Pictures/Wallpapers";

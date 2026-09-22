@@ -7,6 +7,11 @@
 -- it, and the colourscheme goes on before plugins so their highlight
 -- groups land on top of it.
 
+-- Written by the Home Manager module: paths that depend on where this
+-- machine keeps the repo. pcall'd so the config still loads if you run it
+-- outside Nix.
+pcall(require, "thinkpadism.generated")
+
 require("thinkpadism.options")
 require("thinkpadism.colorscheme").load()
 require("thinkpadism.keymaps")

@@ -2,17 +2,22 @@
 #
 # Everything here is Home Manager: themes, terminal, editor, keybinds. The
 # system half -- compositor, portals, power management -- is
-# services.thinkpadism in hosts/t420.
+# services.thinkpadism in hosts/thinkpad.
 {
   config,
   lib,
   pkgs,
   inputs,
   username,
+  machine,
   ...
 }: {
   imports = [
     inputs.self.homeManagerModules.default
+
+    # Your own user configuration. Yours to edit; never touched by the
+    # rice.
+    ./local.nix
   ];
 
   home = {
@@ -21,7 +26,7 @@
 
     # As with system.stateVersion: pins stateful defaults, not packages.
     # Leave it alone on an existing install.
-    stateVersion = "25.11";
+    stateVersion = machine.stateVersion;
   };
 
   programs.thinkpadism = {
@@ -29,27 +34,27 @@
 
     theme = "thinkpad-dark";
 
+    # Where this repo lives; feeds the `rebuild` / `update` aliases and
+    # Neovim's <leader>nr. Set it in machine.nix.
+    flakePath = machine.flakePath;
+
     terminal = "wezterm";
     browser = "librewolf";
 
     hyprland = {
-      # Check yours with `hyprctl monitors`; on a T420 the internal panel
-      # is usually LVDS-1 on older kernels and eDP-1 on newer ones.
-      monitor = "LVDS-1";
+      inherit (machine) monitor;
+      keyboardLayout = machine.keyboardLayout;
+      keyboardOptions = machine.keyboardOptions;
 
-      keyboardLayout = "us";
-      keyboardOptions = "";
-
-      # Anything machine-specific the options above do not cover. Later
-      # calls win in Hyprland, so this overrides everything shipped.
+      # Pin the internal panel. Anything else machine-specific that the
+      # options above do not cover goes here too -- later calls win in
+      # Hyprland, so this overrides everything the repo ships.
       extraLua = ''
-        -- The T420's panel: 1366x768 on the base model, 1600x900 on the
-        -- HD+ option. Neither wants fractional scaling.
         hl.monitor({
-            output   = "LVDS-1",
-            mode     = "preferred",
+            output   = "${machine.monitor}",
+            mode     = "${machine.monitorMode}",
             position = "auto",
-            scale    = 1,
+            scale    = ${toString machine.monitorScale},
         })
       '';
     };
@@ -66,6 +71,7 @@
     };
   };
 
+  # Your git identity. Change or drop it.
   programs.git.settings.user = {
     name = "LuCaSkooo1";
     email = "lucasligas15@gmail.com";
