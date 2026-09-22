@@ -1,0 +1,142 @@
+# Thinkpadism theme for Yazi.
+#
+# The same palette as WezTerm and the shell: one red accent, everything
+# else muted greys. Yazi loads theme-dark.toml or theme-light.toml first
+# depending on the terminal, then overlays this file -- so these colours
+# apply in both, and the terminal's own background shows through.
+#
+# Colours are given as hex rather than ANSI names so they stay put even if
+# a program changes the terminal's palette.
+
+[mgr]
+cwd = { fg = "#e0303c", bold = true }
+
+# Find
+find_keyword  = { fg = "#e0303c", bold = true, underline = true }
+find_position = { fg = "#ff5a63", bg = "reset", bold = true, italic = true }
+
+symlink_target = { fg = "#7fa3c4", italic = true }
+
+# Markers down the left edge: a solid bar in the operation's colour.
+marker_copied   = { fg = "#9cbd7c", bg = "#9cbd7c" }
+marker_cut      = { fg = "#e0303c", bg = "#e0303c" }
+marker_marked   = { fg = "#6fb3ad", bg = "#6fb3ad" }
+marker_selected = { fg = "#e8b44c", bg = "#e8b44c" }
+marker_symbol   = "▌"
+
+count_copied   = { fg = "#141414", bg = "#9cbd7c" }
+count_cut      = { fg = "#f5f3f1", bg = "#b3121d" }
+count_selected = { fg = "#141414", bg = "#e8b44c" }
+
+# Square, thin borders to match the chiselled look of the shell.
+border_symbol = "│"
+border_style  = { fg = "#4a4a4a" }
+
+[tabs]
+active   = { fg = "#f5f3f1", bg = "#b3121d", bold = true }
+inactive = { fg = "#9a9691", bg = "#232323" }
+
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[mode]
+# The mode block in the status bar is the loudest thing on screen, so it
+# carries the accent.
+normal_main = { fg = "#f5f3f1", bg = "#b3121d", bold = true }
+normal_alt  = { fg = "#e0303c", bg = "#232323" }
+
+select_main = { fg = "#141414", bg = "#e8b44c", bold = true }
+select_alt  = { fg = "#e8b44c", bg = "#232323" }
+
+unset_main = { fg = "#141414", bg = "#ff5a63", bold = true }
+unset_alt  = { fg = "#ff5a63", bg = "#232323" }
+
+[status]
+overall   = { bg = "#1b1b1b" }
+sep_left  = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+
+perm_sep   = { fg = "#4a4a4a" }
+perm_type  = { fg = "#7fa3c4" }
+perm_read  = { fg = "#e8b44c" }
+perm_write = { fg = "#e0303c" }
+perm_exec  = { fg = "#9cbd7c" }
+
+progress_label  = { fg = "#e6e4e1", bold = true }
+progress_normal = { fg = "#e0303c", bg = "#232323" }
+progress_error  = { fg = "#e8b44c", bg = "#b3121d" }
+
+# Every popup border picks up the accent, so overlays read as one family.
+[which]
+border          = { fg = "#b3121d" }
+cand            = { fg = "#ff5a63", bold = true }
+rest            = { fg = "#9a9691" }
+desc            = { fg = "#e6e4e1" }
+separator       = "  ‣  "
+separator_style = { fg = "#4a4a4a" }
+
+[confirm]
+border  = { fg = "#b3121d" }
+title   = { fg = "#e0303c", bold = true }
+btn_yes = { fg = "#f5f3f1", bg = "#b3121d", bold = true }
+btn_no  = { fg = "#9a9691" }
+
+[spot]
+border   = { fg = "#b3121d" }
+title    = { fg = "#e0303c", bold = true }
+tbl_col  = { fg = "#e0303c", bold = true }
+tbl_cell = { fg = "#f5f3f1", bg = "#8c1620" }
+
+[notify]
+title_info  = { fg = "#9cbd7c" }
+title_warn  = { fg = "#e8b44c" }
+title_error = { fg = "#e0303c" }
+
+[pick]
+border   = { fg = "#b3121d" }
+active   = { fg = "#e0303c", bold = true }
+inactive = { fg = "#9a9691" }
+
+[input]
+border   = { fg = "#b3121d" }
+title    = { fg = "#e6e4e1" }
+value    = { fg = "#e6e4e1" }
+selected = { fg = "#f5f3f1", bg = "#8c1620" }
+
+[cmp]
+border   = { fg = "#b3121d" }
+active   = { fg = "#f5f3f1", bg = "#8c1620", bold = true }
+inactive = { fg = "#9a9691" }
+
+[tasks]
+border  = { fg = "#b3121d" }
+title   = { fg = "#e0303c", bold = true }
+hovered = { fg = "#ff5a63", bold = true }
+
+[help]
+border  = { fg = "#b3121d" }
+chord   = { fg = "#e0303c", bold = true }
+action  = { fg = "#e6e4e1" }
+hovered = { fg = "#f5f3f1", bg = "#8c1620", bold = true }
+
+# File colouring. Directories get the accent, because that is what you are
+# actually navigating; everything else stays quiet.
+[filetype]
+rules = [
+  { mime = "**/image/*", fg = "#e8b44c" },
+  { mime = "**/{audio,video}/*", fg = "#bb75a3" },
+  { mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#ff5a63" },
+  { mime = "**/application/{pdf,doc,rtf,epub+zip}", fg = "#6fb3ad" },
+  { mime = "vfs/{absent,stale}", fg = "#4a4a4a" },
+
+  # Nix files, since that is most of what lives in this repo.
+  { url = "*.nix", fg = "#7fa3c4" },
+  { url = "*.lua", fg = "#7fa3c4" },
+
+  { url = "*", is = "orphan", fg = "#141414", bg = "#b3121d" },
+  { url = "*", is = "exec",   fg = "#9cbd7c" },
+  { url = "*", is = "dummy",  fg = "#141414", bg = "#b3121d" },
+  { url = "*/", is = "dummy", fg = "#141414", bg = "#b3121d" },
+
+  { url = "*/", fg = "#e0303c", bold = true },
+]
