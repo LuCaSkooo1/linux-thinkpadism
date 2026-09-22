@@ -16,6 +16,10 @@
   imports =
     [
       ./hardware-configuration.nix
+
+      # Your own system configuration. Yours to edit; never touched by
+      # the rice.
+      ./local.nix
     ]
     # Per-model tuning from nixos-hardware: the right kernel modules,
     # microcode and i915 quirks. Optional -- set nixosHardwareModule to

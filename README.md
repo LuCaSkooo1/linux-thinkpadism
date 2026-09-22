@@ -135,27 +135,23 @@ downloading a desktop.
 > `sudo NIX_CONFIG="experimental-features = nix-command flakes" nixos-rebuild ...`
 > After the first successful switch this config enables them permanently.
 
-### 6. Commit the lock file
+### 6. About `flake.lock`
 
-The build writes `flake.lock`, pinning the exact revision of every input.
-**Commit it.** That file is what makes this reproducible — with it, the repo
-rebuilds the same desktop on any machine at any point in the future; without
-it, you get whatever upstream looks like the day you build.
+If `flake.lock` is in the repo you just cloned, you get the exact package
+revisions this rice was built and tested against — nothing to do.
 
-```sh
-git add flake.lock && git commit -m "Lock inputs"
-```
-
-Updating later is `update` then `rebuild` (both aliases this config installs),
-or in full:
+If it is missing, the build generated one against whatever `nixpkgs-unstable`
+looked like today. That works, but it is not the tested set. Either way, your
+`flake.lock` now pins your machine, and you should leave it alone until you
+deliberately want newer packages:
 
 ```sh
-nix flake update && sudo nixos-rebuild switch --flake .
+update      # nix flake update
+rebuild     # sudo nixos-rebuild switch --flake <flakePath>
 ```
 
-Leaving the attribute off works because `hostname` in `machine.nix` matches
-the flake output. If an update breaks something, the previous generation is
-still in the boot menu, and `git checkout flake.lock` puts you back.
+If an update breaks something, the previous generation is still in the boot
+menu, and `git checkout flake.lock && rebuild` puts you back.
 
 ### 7. Check the panel name
 
@@ -168,6 +164,19 @@ hyprctl monitors
 Most T420s report `LVDS-1`; some report `eDP-1`. If yours differs from what
 you set, fix `monitor` in `machine.nix` and `rebuild` — the lid-switch binds
 and the monitor rule both use it.
+
+### If you fork this
+
+Commit `flake.lock` once it builds. That is the file that makes your fork
+reproducible: anyone who clones it then gets the exact package set you
+verified, rather than whatever upstream looks like the day they build.
+
+```sh
+git add -f flake.lock && git commit -m "Lock inputs" && git push
+```
+
+Re-run `nix flake update` and commit the result whenever you want to move
+forward deliberately.
 
 ### Using it as a module instead
 
@@ -183,8 +192,12 @@ set `services.thinkpadism` / `programs.thinkpadism` in your own config.
 ```
 machine.nix            EVERYTHING machine-specific — edit this one
 flake.nix              inputs, the system, the exported modules
-hosts/thinkpad/        the machine: bootloader, user, hardware
-home/                  the user: theme choice, programs, git identity
+hosts/thinkpad/
+  default.nix          the machine: bootloader, user, hardware
+  local.nix            YOURS — system packages and services
+home/
+  default.nix          the user: theme choice, programs, git identity
+  local.nix            YOURS — your apps and dotfiles
 nix/
   nixos.nix            system module — compositor, portals, power, fonts
   hm/                  home module — theming, programs, Hyprland wiring
@@ -359,28 +372,29 @@ Shell side: `eza`, `bat`, `ripgrep`, `fd`, `fzf`, `zoxide`, `lazygit`,
 Everything lives in this repo. `/etc/nixos/configuration.nix` is not read at
 all once you build with `--flake`, so editing it does nothing.
 
-| What you want | Where | Option |
-| --- | --- | --- |
-| A CLI tool or app, for you | `home/default.nix` | `home.packages` |
-| Something every user needs | `hosts/thinkpad/default.nix` | `environment.systemPackages` |
-| A system service | `hosts/thinkpad/default.nix` | `services.*` |
-| A program whose dotfiles HM should manage | `home/default.nix` | `programs.*` |
-| A Hyprland keybind or rule | `home/default.nix` | `hyprland.extraLua` |
-| Hostname, monitor, keyboard, timezone | `machine.nix` | — |
-| A whole external flake | `flake.nix` | `inputs` |
+Two files are set aside for your own machine and are never touched by the
+rice, so `git pull` will not fight you over them:
 
-`flake.nix` is only for *inputs* — new upstream sources. Day to day you will
-not touch it.
+| | |
+| --- | --- |
+| `hosts/thinkpad/local.nix` | **system** — packages for everyone, services, hardware, firewall. What used to go in `configuration.nix`. |
+| `home/local.nix` | **user** — your apps, shell aliases, dotfiles Home Manager should manage, extra Hyprland binds. |
 
 ```nix
-# home/default.nix — packages for your user
-home.packages = with pkgs; [discord gimp obsidian];
+# hosts/thinkpad/local.nix
+{pkgs, ...}: {
+  environment.systemPackages = with pkgs; [vlc qbittorrent];
+  services.printing.enable = true;
+  virtualisation.docker.enable = true;
+}
 ```
 
 ```nix
-# hosts/thinkpad/default.nix — a system service
-virtualisation.docker.enable = true;
-users.users.${username}.extraGroups = ["docker"];
+# home/local.nix
+{pkgs, ...}: {
+  home.packages = with pkgs; [discord gimp obsidian];
+  programs.bash.shellAliases.gs = "git status";
+}
 ```
 
 Then, from anywhere:
@@ -389,14 +403,43 @@ Then, from anywhere:
 rebuild          # alias for: sudo nixos-rebuild switch --flake <flakePath>
 ```
 
+Changing the rice itself — themes, keybinds, the bar — means editing the real
+files: `configs/`, `nix/hm/`, `machine.nix`. The two `local.nix` files are for
+things that are yours rather than the rice's.
+
 > **Flakes only see git-tracked files.** Editing an existing file is fine, but
 > a file you *create* is invisible to Nix until you `git add` it — which
 > usually surfaces as a confusing `path ... does not exist`. When something
 > you just wrote seems to be ignored, `git status` first.
+>
+> This is also why the two `local.nix` files are committed rather than
+> `.gitignore`d: an ignored file here would simply not exist as far as the
+> build is concerned.
 
-If a rebuild leaves the system broken, the previous generation is still in the
-boot menu, and `sudo nixos-rebuild switch --flake . --rollback` steps back
-without rebooting.
+### Keeping your own changes local
+
+Because `local.nix` has to be tracked, "don't publish it" is a git question
+rather than a `.gitignore` question. Work on a branch you never push:
+
+```sh
+git checkout -b local          # once
+# ... edit local.nix, rebuild, commit whenever you like
+git commit -am "local: add docker"
+```
+
+Your machine stays on `local` forever. To pick up rice updates:
+
+```sh
+git fetch origin
+git rebase origin/main
+```
+
+And if you write something worth publishing, put that commit on `main`
+instead — `git checkout main`, make it there, push, then rebase `local` on
+top. Everything on `local` stays on your disk.
+
+If you are the only person who will ever see the repo, you can skip all of
+this and just commit to `main` without pushing.
 
 ---
 

@@ -14,6 +14,10 @@
 }: {
   imports = [
     inputs.self.homeManagerModules.default
+
+    # Your own user configuration. Yours to edit; never touched by the
+    # rice.
+    ./local.nix
   ];
 
   home = {
