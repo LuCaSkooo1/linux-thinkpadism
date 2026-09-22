@@ -114,9 +114,11 @@ in {
           grep = "rg";
 
           # NixOS, from anywhere. The path comes from
-          # programs.thinkpadism.flakePath.
-          rebuild = "sudo nixos-rebuild switch --flake ${cfg.flakePath}#t420";
-          rebuild-test = "sudo nixos-rebuild test --flake ${cfg.flakePath}#t420";
+          # programs.thinkpadism.flakePath; the attribute is left off, so
+          # nixos-rebuild picks the nixosConfiguration matching this
+          # machine's hostname -- which is what machine.hostname sets.
+          rebuild = "sudo nixos-rebuild switch --flake ${cfg.flakePath}";
+          rebuild-test = "sudo nixos-rebuild test --flake ${cfg.flakePath}";
           update = "nix flake update --flake ${cfg.flakePath}";
           gc = "sudo nix-collect-garbage --delete-older-than 14d";
 

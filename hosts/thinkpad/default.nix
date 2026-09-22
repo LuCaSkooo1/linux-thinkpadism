@@ -1,24 +1,27 @@
-# The ThinkPad T420 this rice is built for.
+# The machine.
 #
-# Everything machine-specific lives here and in hardware-configuration.nix;
-# the rest of the repo is generic. To build for a different ThinkPad, copy
-# this directory, swap the nixos-hardware module for yours, and add it to
-# nixosConfigurations in flake.nix.
+# Everything model- or user-specific is read from ../../machine.nix, so
+# this file describes the shape of a Thinkpadism machine rather than any
+# particular one. The only other file that is specific to your hardware is
+# hardware-configuration.nix, next to this one.
 {
   config,
   lib,
   pkgs,
   inputs,
   username,
+  machine,
   ...
 }: {
-  imports = [
-    ./hardware-configuration.nix
-
-    # Sensible defaults for this exact machine: the right kernel
-    # modules, microcode, and the i915 quirks Sandy Bridge wants.
-    inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t420
-  ];
+  imports =
+    [
+      ./hardware-configuration.nix
+    ]
+    # Per-model tuning from nixos-hardware: the right kernel modules,
+    # microcode and i915 quirks. Optional -- set nixosHardwareModule to
+    # null in machine.nix on a machine it does not cover.
+    ++ lib.optional (machine.nixosHardwareModule != null)
+    inputs.nixos-hardware.nixosModules.${machine.nixosHardwareModule};
 
   ###########################################################################
   # The desktop
@@ -51,9 +54,8 @@
   ###########################################################################
 
   boot.loader = {
-    # The T420 predates UEFI-by-default but supports it. If you installed
-    # in legacy BIOS mode, comment this block out and use the GRUB one
-    # below instead.
+    # UEFI. If you installed in legacy BIOS mode, comment this block out
+    # and use the GRUB one below instead.
     systemd-boot.enable = true;
     efi.canTouchEfiVariables = true;
     timeout = 2;
@@ -70,12 +72,11 @@
   # Identity
   ###########################################################################
 
-  networking.hostName = "t420";
+  networking.hostName = machine.hostname;
 
-  time.timeZone = lib.mkDefault "Europe/Prague";
-  i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
-
-  console.keyMap = lib.mkDefault "us";
+  time.timeZone = lib.mkDefault machine.timeZone;
+  i18n.defaultLocale = lib.mkDefault machine.locale;
+  console.keyMap = lib.mkDefault machine.consoleKeyMap;
 
   users.users.${username} = {
     isNormalUser = true;
@@ -107,8 +108,5 @@
     settings.PasswordAuthentication = false;
   };
 
-  # The NixOS release this configuration was first written against. Do
-  # not change it on an existing install: it pins stateful defaults
-  # (database versions and the like), not the package set.
-  system.stateVersion = "25.11";
+  system.stateVersion = machine.stateVersion;
 }

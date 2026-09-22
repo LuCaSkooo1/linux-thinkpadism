@@ -1,13 +1,13 @@
 ###############################################################################
 #  REPLACE THIS FILE.
 #
-#  It is a placeholder so the flake evaluates on a machine that is not the
-#  T420. It will not boot anything.
+#  It is a placeholder so the flake evaluates on a machine that is not
+#  yours. It will not boot anything.
 #
 #  On the real machine, after `nixos-install` or from the installer:
 #
 #      sudo nixos-generate-config --show-hardware-config \
-#        > hosts/t420/hardware-configuration.nix
+#        > hosts/thinkpad/hardware-configuration.nix
 #
 #  then commit the result. That is the one file in this repo that is
 #  genuinely specific to your disks.

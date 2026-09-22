@@ -23,9 +23,10 @@ themes, terminal, editor and power management.
 
 ## What this is
 
-One flake, one command, one machine. `nixos-rebuild switch --flake .#t420`
-builds the system and the user environment together — there is no second
-`home-manager switch` step, and nothing to copy into `~/.config` by hand.
+One flake, one command. `nixos-rebuild switch --flake .#<hostname>` builds the
+system and the user environment together — no second `home-manager switch`
+step, nothing to copy into `~/.config` by hand. Everything that differs
+between machines lives in a single `machine.nix`.
 
 | | |
 | --- | --- |
@@ -41,80 +42,144 @@ builds the system and the user environment together — there is no second
 
 ---
 
-## Installing on a fresh machine
+## Installing on a fresh NixOS machine
 
-This is the path from a blank disk to the desktop.
+From a blank disk to the desktop. You edit **two files**: `machine.nix`, and
+your own hardware config.
 
 ### 1. Install NixOS, minimally
 
-Boot the installer and do a normal minimal install — no desktop environment,
-no display manager. Set a password for your user and reboot into the console.
+Boot the installer and do a normal install — no desktop environment, no
+display manager, nothing extra. Set a password for your user, reboot, and log
+in at the console.
 
-### 2. Get the repo
+### 2. Clone the repo
 
 ```sh
 nix-shell -p git
-git clone https://github.com/LuCaSkooo1/linux-thinkpadism ~/linux-thinkpadism
-cd ~/linux-thinkpadism
+git clone https://github.com/LuCaSkooo1/linux-thinkpadism ~/thinkpadism
+cd ~/thinkpadism
 ```
 
-### 3. Put in your own hardware config
+Anywhere works — `~/thinkpadism` is just what the rest of these steps assume.
 
-This is the **one file** in the repo that is genuinely specific to your disks,
-and the committed one is a placeholder that will not boot:
+### 3. Drop in your hardware config
+
+This is the one file in the repo that is specific to *your* disks. The
+committed one is a placeholder with fake UUIDs and will not boot:
 
 ```sh
 sudo nixos-generate-config --show-hardware-config \
-  > hosts/t420/hardware-configuration.nix
+  > hosts/thinkpad/hardware-configuration.nix
 ```
 
-### 4. Set your username
+> **Booting in legacy BIOS mode rather than UEFI?** Open
+> `hosts/thinkpad/default.nix` and swap the `systemd-boot` block for the
+> commented-out GRUB one just below it.
 
-The flake defines it once, near the top:
+### 4. Edit `machine.nix`
+
+Everything that differs between machines is in this one file:
 
 ```nix
-username = "lucas";
+{
+  username  = "lucas";        # your login name
+  hostname  = "t420";         # also the flake output name
+  flakePath = "/home/lucas/thinkpadism";   # where you just cloned
+
+  nixosHardwareModule = "lenovo-thinkpad-t420";
+  monitor = "LVDS-1";
+
+  keyboardLayout = "us";
+  timeZone = "Europe/Prague";
+  # ...
+}
 ```
 
-Change it to yours if it differs. Nothing else needs editing.
+At minimum change `username`, `flakePath` and `timeZone`. The rest has
+sensible defaults, and `monitor` you can fix after first boot (step 7).
+
+**On a different ThinkPad?** Change `nixosHardwareModule` to your model —
+`"lenovo-thinkpad-x220"`, `"lenovo-thinkpad-t430"`, and so on; the list is in
+[nixos-hardware](https://github.com/NixOS/nixos-hardware#devices). Set it to
+`null` on a machine that isn't covered: everything still works, you just lose
+the per-model tuning.
 
 ### 5. Build
 
 ```sh
-sudo nixos-rebuild switch --flake .#t420
+sudo nixos-rebuild test --flake .#t420     # try it, without touching the bootloader
+sudo nixos-rebuild switch --flake .#t420   # keep it
 ```
 
-The first build takes a while — it is compiling nothing, but it is downloading
-a desktop. Afterwards, log in at the greeter.
+Replace `t420` with whatever you set `hostname` to.
+
+`test` activates the new system but leaves the boot menu alone, so if
+something goes wrong you reboot back into what you had. Worth doing for the
+first build.
+
+The first build takes a while. It is compiling almost nothing — it is
+downloading a desktop.
+
+> **`error: flake 'path:/etc/nixos' does not provide attribute ...`**
+> You ran bare `nixos-rebuild switch`, which always reads `/etc/nixos` and
+> never your clone. The `--flake .#<hostname>` part is not optional.
+
+> **`experimental Nix feature 'nix-command' is disabled`**
+> Flakes are not on yet. Prefix the command once:
+> `sudo NIX_CONFIG="experimental-features = nix-command flakes" nixos-rebuild ...`
+> After the first successful switch this config enables them permanently.
 
 ### 6. Commit the lock file
 
-The first build writes `flake.lock`, pinning the exact revision of every
-input. **Commit it.** That file is what makes this reproducible: with it,
-this repo builds the same desktop on any machine, at any point in the future.
+The build writes `flake.lock`, pinning the exact revision of every input.
+**Commit it.** That file is what makes this reproducible — with it, the repo
+rebuilds the same desktop on any machine at any point in the future; without
+it, you get whatever upstream looks like the day you build.
 
 ```sh
 git add flake.lock && git commit -m "Lock inputs"
 ```
 
-To update later: `nix flake update && sudo nixos-rebuild switch --flake .#t420`.
-If an update breaks something, the previous generation is still in the boot
-menu, and `git checkout` on the lock file puts you back.
+Updating later is `update` then `rebuild` (both aliases this config installs),
+or in full:
+
+```sh
+nix flake update && sudo nixos-rebuild switch --flake .
+```
+
+Leaving the attribute off works because `hostname` in `machine.nix` matches
+the flake output. If an update breaks something, the previous generation is
+still in the boot menu, and `git checkout flake.lock` puts you back.
 
 ### 7. Check the panel name
 
-Run `hyprctl monitors` and note the output name. On a T420 it is usually
-`LVDS-1`, sometimes `eDP-1`. If yours differs, change it in `home/default.nix`
-(`hyprland.monitor` and the `extraLua` block) — the lid switch binds use it.
+Log in, open a terminal, and run:
+
+```sh
+hyprctl monitors
+```
+
+Most T420s report `LVDS-1`; some report `eDP-1`. If yours differs from what
+you set, fix `monitor` in `machine.nix` and `rebuild` — the lid-switch binds
+and the monitor rule both use it.
+
+### Using it as a module instead
+
+If you already have a NixOS configuration and just want pieces of this, the
+flake exports `nixosModules.thinkpadism`, `homeManagerModules.thinkpadism`
+and the individual packages. Ignore `machine.nix` and `hosts/` entirely and
+set `services.thinkpadism` / `programs.thinkpadism` in your own config.
 
 ---
 
 ## Layout
 
 ```
-flake.nix              inputs, the t420 system, the exported modules
-hosts/t420/            this machine: bootloader, user, hardware
-home/                  this user: theme choice, monitor, git identity
+machine.nix            EVERYTHING machine-specific — edit this one
+flake.nix              inputs, the system, the exported modules
+hosts/thinkpad/        the machine: bootloader, user, hardware
+home/                  the user: theme choice, programs, git identity
 nix/
   nixos.nix            system module — compositor, portals, power, fonts
   hm/                  home module — theming, programs, Hyprland wiring
@@ -257,8 +322,8 @@ only the CSS leaves black arrows on a black background.
   WebGpu falls back to software without saying so.
 - **Battery.** Charging is capped at 85% and resumes below 75%. On a cell this
   old that is the single biggest thing you can do for its remaining life. Set
-  `thinkpad.batteryThresholds = null` in `hosts/t420` if you need the range
-  more.
+  `thinkpad.batteryThresholds = null` in `hosts/thinkpad` if you need the
+  range more.
 - **Suspend.** `mem_sleep_default=deep`. s2idle on this generation is barely a
   power saving at all.
 - **Blur and animations are off**, everywhere, on purpose. They are the two
@@ -286,8 +351,10 @@ Shell side: `eza`, `bat`, `ripgrep`, `fd`, `fzf`, `zoxide`, `lazygit`,
 
 ## Customising
 
-Almost everything is an option on `programs.thinkpadism` in `home/default.nix`
-or `services.thinkpadism` in `hosts/t420/default.nix`:
+Machine-specific values — username, hostname, monitor, keyboard, timezone —
+all live in `machine.nix`. Beyond that, almost everything is an option on
+`programs.thinkpadism` in `home/default.nix` or `services.thinkpadism` in
+`hosts/thinkpad/default.nix`:
 
 ```nix
 programs.thinkpadism = {

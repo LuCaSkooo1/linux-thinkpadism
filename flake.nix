@@ -24,24 +24,26 @@
     systems = ["x86_64-linux" "aarch64-linux"];
     forAllSystems = fn: nixpkgs.lib.genAttrs systems (system: fn nixpkgs.legacyPackages.${system});
 
-    # Change this and the directory under hosts/ to rename the machine.
-    username = "lucas";
+    # Everything machine-specific lives in one file. See machine.nix.
+    machine = import ./machine.nix;
+    inherit (machine) username hostname;
   in {
     ###################################################################
     # The whole machine
     #
-    #   sudo nixos-rebuild switch --flake .#t420
+    #   sudo nixos-rebuild switch --flake .#<hostname>
     #
-    # That one command builds the system, the user environment and the
-    # desktop together. There is no second step.
+    # where <hostname> is machine.hostname -- "t420" as shipped. That one
+    # command builds the system, the user environment and the desktop
+    # together. There is no second step.
     ###################################################################
-    nixosConfigurations.t420 = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
 
-      specialArgs = {inherit inputs username;};
+      specialArgs = {inherit inputs username machine;};
 
       modules = [
-        ./hosts/t420
+        ./hosts/thinkpad
 
         (import ./nix/nixos.nix self)
 
@@ -50,7 +52,7 @@
           home-manager = {
             useGlobalPkgs = true;
             useUserPackages = true;
-            extraSpecialArgs = {inherit inputs username;};
+            extraSpecialArgs = {inherit inputs username machine;};
             users.${username} = import ./home;
 
             # Move a file Home Manager would otherwise refuse to
