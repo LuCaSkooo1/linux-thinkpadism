@@ -1,0 +1,53 @@
+# Thinkpadism Yazi keymap.
+#
+# Only additions and overrides -- Yazi merges this over its defaults, so
+# everything vim-shaped still works as it does out of the box.
+
+[[mgr.prepend_keymap]]
+on   = ["<C-s>"]
+run  = 'shell "$SHELL" --block'
+desc = "Drop to a shell here"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "r"]
+run  = '''shell -- ya emit cd "$(git rev-parse --show-toplevel)"'''
+desc = "Go to the repository root"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "n"]
+run  = "cd /etc/nixos"
+desc = "Go to /etc/nixos"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "c"]
+run  = "cd ~/.config"
+desc = "Go to ~/.config"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "d"]
+run  = "cd ~/Downloads"
+desc = "Go to ~/Downloads"
+
+# Yank the highlighted path, rather than the file, straight to the
+# clipboard. Constantly useful when writing Nix.
+[[mgr.prepend_keymap]]
+on   = ["y", "p"]
+run  = '''shell --  for p in "$@"; do echo "$p"; done | wl-copy'''
+desc = "Copy the full path"
+
+[[mgr.prepend_keymap]]
+on   = ["y", "n"]
+run  = '''shell --  for p in "$@"; do basename "$p"; done | wl-copy'''
+desc = "Copy the file name"
+
+# Toggle the preview pane off to give the listing the whole screen -- worth
+# having on a 1366x768 panel.
+[[mgr.prepend_keymap]]
+on   = ["T"]
+run  = "plugin toggle-pane max-preview"
+desc = "Maximise the preview"
+
+[[mgr.prepend_keymap]]
+on   = ["<Esc>"]
+run  = "escape"
+desc = "Leave visual mode, clear the selection or the filter"

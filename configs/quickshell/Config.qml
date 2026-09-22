@@ -13,7 +13,7 @@ Singleton {
     //
     // Every theme carries a `dark` flag; the light/dark toggle in the theme
     // menu flips between the themes named in `lightTheme` / `darkTheme`.
-    property var colors: themes[themes[settings.currentTheme] == null ? 'thinkpad-light' : settings.currentTheme]
+    property var colors: themes[themes[settings.currentTheme] == null ? 'thinkpad-dark' : settings.currentTheme]
 
     // The pair the light/dark toggle switches between.
     readonly property string lightTheme: "thinkpad-light"
@@ -125,17 +125,41 @@ Singleton {
 
     /*=== Theme helpers ===*/
 
+    /* Tell the rest of the desktop whether we're dark or light.
+     *
+     * Three separate keys, because three separate toolkits read three
+     * different things:
+     *
+     *   color-scheme  GTK4/libadwaita, and everything that asks the XDG
+     *                 appearance portal -- Firefox, LibreWolf, Chromium.
+     *   gtk-theme     GTK3, which ignores color-scheme and wants to be
+     *                 handed a different theme by name.
+     *   prefer-dark   GTK3's own dark switch, for themes that ship both
+     *                 variants in one directory.
+     *
+     * Writing only the first is what leaves a dark desktop with white
+     * GTK3 menus and a white Firefox chrome.
+     */
+    readonly property string lightGtkTheme: "ThinkpadismPlatinum"
+    readonly property string darkGtkTheme: "ThinkpadismPlatinumDark"
+
+    onIsDarkChanged: syncColorScheme()
+    Component.onCompleted: syncColorScheme()
+
+    function syncColorScheme() {
+        const iface = "/org/gnome/desktop/interface/";
+        Quickshell.execDetached(["dconf", "write", iface + "color-scheme",
+                                 isDark ? "'prefer-dark'" : "'prefer-light'"]);
+        Quickshell.execDetached(["dconf", "write", iface + "gtk-theme",
+                                 isDark ? ("'" + darkGtkTheme + "'") : ("'" + lightGtkTheme + "'")]);
+        Quickshell.execDetached(["dconf", "write",
+                                 "/org/gnome/desktop/interface/gtk-application-prefer-dark-theme",
+                                 isDark ? "true" : "false"]);
+    }
+
     // Flip between the configured light and dark themes. If the user is on
     // some other theme entirely (cherry, gleep, ...) we jump to the dark one,
     // since that is the least surprising thing a "dark mode" button can do.
-    // Tell the rest of the desktop whether we're dark or light: GTK4/libadwaita
-    // apps and Firefox (through xdg-desktop-portal) follow this setting.
-    onIsDarkChanged: syncColorScheme()
-    function syncColorScheme() {
-        Quickshell.execDetached(["dconf", "write", "/org/gnome/desktop/interface/color-scheme",
-                                 isDark ? "'prefer-dark'" : "'default'"]);
-    }
-
     function toggleDarkMode() {
         setTheme(isDark ? lightTheme : darkTheme);
     }
@@ -187,7 +211,7 @@ Singleton {
                 property string version: "0.2"
                 property bool militaryTimeClockFormat: true
                 property string systemProfileImageSource: ""
-                property string currentTheme: "thinkpad-light"
+                property string currentTheme: "thinkpad-dark"
                 property bool setWallpaperToThemeWallpaper: true
 
                 // Directory scanned by the wallpaper switcher. "~" is expanded.

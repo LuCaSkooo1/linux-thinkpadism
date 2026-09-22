@@ -4,8 +4,8 @@
   makeWrapper,
   quickshell,
   kdePackages,
-  # Runtime tools the shell shells out to. Passed in so the Home Manager
-  # module can swap them (yazi for ranger, nmtui for impala, ...).
+  # Runtime tools the shell shells out to. Passed in so they can be
+  # swapped without rebuilding the QML tree.
   coreutils,
   jq,
   # The QML tree. Overridable so you can point the wrapper at a checkout you
