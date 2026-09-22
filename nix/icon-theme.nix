@@ -19,6 +19,10 @@ stdenvNoCC.mkDerivation {
     mkdir -p $out/share/icons/ThinkpadismIcons
     cp -r . $out/share/icons/ThinkpadismIcons/
 
+    # nixpkgs fails any build containing dangling symlinks; drop aliases whose
+    # target icon doesn't exist rather than failing the whole install.
+    find $out -xtype l -delete
+
     gtk-update-icon-cache --force --quiet $out/share/icons/ThinkpadismIcons || true
 
     runHook postInstall
