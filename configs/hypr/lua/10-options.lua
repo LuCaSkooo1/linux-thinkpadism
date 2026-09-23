@@ -124,7 +124,7 @@ hl.config({
 
 hl.config({
     input = {
-        -- Overridden by thinkpadism.keyboardLayout (90-keyboard.lua).
+        -- Overridden by thinkpadism.keyboardLayout (90-session.lua).
         kb_layout  = "us",
         kb_options = "",
 

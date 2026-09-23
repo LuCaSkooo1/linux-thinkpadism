@@ -130,12 +130,15 @@ in {
     ###################################################################
 
     fonts.packages = with pkgs; [
+      # Monaco and Charcoal: the terminal and lock screen use the same
+      # face as the bar.
+      self.packages.${pkgs.stdenv.hostPlatform.system}.thinkpadism-fonts
       nerd-fonts.jetbrains-mono
       nerd-fonts.symbols-only
       noto-fonts
       noto-fonts-color-emoji
     ];
-    fonts.fontconfig.defaultFonts.monospace = ["JetBrainsMono Nerd Font"];
+    fonts.fontconfig.defaultFonts.monospace = ["Monaco" "JetBrainsMono Nerd Font"];
 
     ###################################################################
     # Your user

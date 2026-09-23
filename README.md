@@ -27,7 +27,7 @@ Only what it takes to have a working desktop. Everything else is up to you.
 | --- | --- |
 | **Desktop** | Hyprland (configured in Lua), a Quickshell bar, lock screen, idle, notifications |
 | **Programs** | WezTerm, Yazi, Neovim, Git, LibreWolf |
-| **Theme** | ThinkPad red, dark by default — GTK, Qt and the browser included |
+| **Theme** | ThinkPad red, dark by default — GTK, Qt and the browser included. Hackneyed cursor (Windows 3.x style), Monaco font throughout |
 | **System** | Audio (PipeWire), network (NetworkManager), Bluetooth, a login screen |
 
 Works on x86 and ARM, on real hardware or in a VM.

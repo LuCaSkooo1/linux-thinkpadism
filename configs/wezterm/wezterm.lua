@@ -1,8 +1,8 @@
 -- Thinkpadism WezTerm configuration.
 --
--- The same idea as the rest of the rice: a terminal that behaves like a
--- fixed-function device, with no animation, no rounding, and one accent
--- colour.
+-- Styled to sit next to the bar: the same Monaco face, the same red, a
+-- square tab strip that is always there, and a status line with the
+-- things you glance at.
 
 local wezterm = require("wezterm")
 local colors = require("colors")
@@ -11,90 +11,158 @@ local act = wezterm.action
 local config = wezterm.config_builder()
 
 --------------------------------------------------------------------------
--- APPEARANCE
+-- COLOURS: follow the bar
 --------------------------------------------------------------------------
 
--- Follows the desktop's light/dark setting, which the shell writes to
--- dconf and the XDG portal republishes. Flipping the bar's dark-mode
--- toggle restyles open terminals without restarting them.
-local function scheme_for_appearance(appearance)
-    if appearance:find("Dark") then
-        return colors.dark
+-- The bar keeps its theme in settings.json. Reading it from here -- and
+-- watching the file -- means flipping dark/light on the bar (SUPER+SHIFT+T)
+-- restyles every open terminal, with no dependence on the desktop portal.
+local function bar_is_dark()
+    local path = (os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config"))
+        .. "/thinkpadism/settings.json"
+    local f = io.open(path, "r")
+    if not f then
+        return true
     end
-    return colors.light
+    local text = f:read("*a")
+    f:close()
+    wezterm.add_to_config_reload_watch_list(path)
+    local ok, data = pcall(wezterm.serde.json_decode, text)
+    if not ok or type(data) ~= "table" or type(data.settings) ~= "table" then
+        return true
+    end
+    return data.settings.currentTheme ~= "thinkpad-light"
 end
+
+local dark = bar_is_dark()
+local palette = dark and colors.dark or colors.light
 
 config.color_schemes = {
     ["Thinkpadism Dark"]  = colors.dark,
     ["Thinkpadism Light"] = colors.light,
 }
+config.color_scheme = dark and "Thinkpadism Dark" or "Thinkpadism Light"
 
-wezterm.on("window-config-reloaded", function(window)
-    local overrides = window:get_config_overrides() or {}
-    local scheme = scheme_for_appearance(window:get_appearance())
-    local name = (scheme == colors.dark) and "Thinkpadism Dark" or "Thinkpadism Light"
-    if overrides.color_scheme ~= name then
-        overrides.color_scheme = name
-        window:set_config_overrides(overrides)
-    end
-end)
-
-config.color_scheme = "Thinkpadism Dark"
+-- The chrome around the tabs, taken from the same palette.
+local ui = {
+    bar     = dark and "#1b1b1b" or "#c4c0bb",
+    text    = palette.foreground,
+    dim     = dark and "#9a9691" or "#3a3835",
+    accent  = "#b3121d",
+    bright  = "#e0303c",
+    onRed   = "#f5f3f1",
+}
 
 --------------------------------------------------------------------------
--- FONT
+-- FONT: the bar's Monaco
 --------------------------------------------------------------------------
 
--- JetBrains Mono is the primary; the fallbacks cover the Nerd Font glyphs
--- yazi and the shell prompt use, and then emoji. Listing them explicitly
--- beats letting fontconfig pick something with the wrong metrics.
+-- Monaco for the text, so the terminal and the bar read as one thing.
+-- JetBrains Mono Nerd Font fills in the icon glyphs Yazi and Neovim use,
+-- then emoji.
 config.font = wezterm.font_with_fallback({
-    { family = "JetBrainsMono Nerd Font", weight = "Regular" },
-    { family = "Symbols Nerd Font Mono" },
-    { family = "Noto Color Emoji" },
+    "Monaco",
+    "JetBrainsMono Nerd Font",
+    "Symbols Nerd Font Mono",
+    "Noto Color Emoji",
 })
 config.font_size = 11.0
+config.line_height = 1.1
 
--- No ligatures: in a config file, `!=` should look like two characters.
+-- No ligatures: `!=` should look like two characters.
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
 
 --------------------------------------------------------------------------
 -- WINDOW
 --------------------------------------------------------------------------
 
-config.window_padding = { left = 8, right = 8, top = 8, bottom = 6 }
+config.window_padding = { left = 12, right = 12, top = 10, bottom = 8 }
 
--- Hyprland draws the border; WezTerm should not draw a second one.
+-- Hyprland draws the (red) border; WezTerm should not draw a second one.
 config.window_decorations = "NONE"
+config.window_background_opacity = 1.0
 
--- Near-opaque. Blur is off compositor-side on this hardware, so a lower
--- value here would just make text harder to read.
-config.window_background_opacity = 0.98
-
-config.inactive_pane_hsb = { saturation = 0.85, brightness = 0.7 }
+-- Unfocused splits fade back, so the one you are typing in stands out.
+config.inactive_pane_hsb = { saturation = 0.6, brightness = 0.55 }
 
 config.enable_scroll_bar = false
 config.scrollback_lines = 10000
 
 --------------------------------------------------------------------------
--- TABS
+-- TAB STRIP AND STATUS LINE
 --------------------------------------------------------------------------
 
--- Square, flat tabs, hidden when there is only one.
+-- A flat, square strip that is always there -- it carries the status
+-- line, so it earns its row even with one tab.
 config.use_fancy_tab_bar = false
-config.hide_tab_bar_if_only_one_tab = true
+config.hide_tab_bar_if_only_one_tab = false
 config.tab_bar_at_bottom = false
-config.tab_max_width = 28
+config.tab_max_width = 32
 config.show_new_tab_button_in_tab_bar = false
+config.status_update_interval = 5000
 
--- Number the tabs, and mark the one that has unseen output.
+config.colors = {
+    tab_bar = {
+        background = ui.bar,
+        active_tab = { bg_color = ui.accent, fg_color = ui.onRed, intensity = "Bold" },
+        inactive_tab = { bg_color = ui.bar, fg_color = ui.dim },
+        inactive_tab_hover = { bg_color = ui.bar, fg_color = ui.bright },
+    },
+}
+
+-- " 1 nvim " -- numbered, and a red dot on a tab with output you have
+-- not looked at yet.
 wezterm.on("format-tab-title", function(tab)
     local title = tab.active_pane.title
-    if #title > 18 then
-        title = title:sub(1, 17) .. "…"
+    if #title > 22 then
+        title = title:sub(1, 21) .. "…"
     end
-    local marker = tab.active_pane.has_unseen_output and "•" or " "
-    return string.format(" %d %s%s ", tab.tab_index + 1, title, marker)
+    local cells = {}
+    if not tab.is_active and tab.active_pane.has_unseen_output then
+        table.insert(cells, { Foreground = { Color = ui.bright } })
+        table.insert(cells, { Text = " ●" })
+        table.insert(cells, "ResetAttributes")
+    end
+    table.insert(cells, { Text = string.format(" %d %s ", tab.tab_index + 1, title) })
+    return cells
+end)
+
+-- Left: a red badge, like the start button on the bar.
+-- Right: the current directory and the time.
+wezterm.on("update-status", function(window, pane)
+    window:set_left_status(wezterm.format({
+        { Background = { Color = ui.accent } },
+        { Foreground = { Color = ui.onRed } },
+        { Attribute = { Intensity = "Bold" } },
+        { Text = " ▌THINKPADISM " },
+        "ResetAttributes",
+        { Background = { Color = ui.bar } },
+        { Text = " " },
+    }))
+
+    local cwd = ""
+    local uri = pane:get_current_working_dir()
+    if uri then
+        -- A Url object on current WezTerm, a "file://host/path" string on
+        -- older ones.
+        local path
+        if type(uri) == "string" then
+            path = uri:gsub("^file://[^/]*", "")
+        else
+            path = uri.file_path or ""
+        end
+        local home = os.getenv("HOME") or ""
+        cwd = path:gsub("^" .. home:gsub("%p", "%%%0"), "~")
+    end
+
+    window:set_right_status(wezterm.format({
+        { Background = { Color = ui.bar } },
+        { Foreground = { Color = ui.dim } },
+        { Text = cwd .. "  " },
+        { Background = { Color = ui.accent } },
+        { Foreground = { Color = ui.onRed } },
+        { Text = " " .. wezterm.strftime("%H:%M") .. " " },
+    }))
 end)
 
 --------------------------------------------------------------------------

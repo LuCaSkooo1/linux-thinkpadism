@@ -33,6 +33,7 @@
       thinkpadism-icons = pkgs.callPackage ./pkgs/icon-theme.nix {};
       thinkpadism-gtk-theme = pkgs.callPackage ./pkgs/gtk-theme.nix {};
       thinkpadism-wallpapers = pkgs.callPackage ./pkgs/wallpapers.nix {};
+      thinkpadism-fonts = pkgs.callPackage ./pkgs/fonts.nix {};
       default = thinkpadism;
     });
 
