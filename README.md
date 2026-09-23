@@ -97,6 +97,57 @@ sudo nixos-rebuild switch --flake /etc/nixos#nixos
 
 If something breaks, pick the previous generation in the boot menu.
 
+### On a ThinkPad T420
+
+The desktop runs anywhere as-is. On a T420 (or any Sandy Bridge ThinkPad)
+these add battery care, proper suspend and video decoding — paste into
+`configuration.nix`:
+
+```nix
+# --- ThinkPad T420 ---------------------------------------------------
+# Battery: charge only between 75% and 85%. The biggest single thing
+# you can do for an old cell's lifespan. Remove the four THRESH lines to
+# charge to 100%.
+services.tlp = {
+  enable = true;
+  settings = {
+    START_CHARGE_THRESH_BAT0 = 75;
+    STOP_CHARGE_THRESH_BAT0 = 85;
+    START_CHARGE_THRESH_BAT1 = 75; # Ultrabay battery, if fitted
+    STOP_CHARGE_THRESH_BAT1 = 85;
+    CPU_BOOST_ON_BAT = 0;          # turbo costs more battery than it saves
+    CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
+  };
+};
+services.power-profiles-daemon.enable = false; # conflicts with TLP
+services.thermald.enable = true;
+
+# tp_smapi exposes the charge thresholds on this generation.
+boot.kernelModules = [ "tp_smapi" "acpi_call" ];
+boot.extraModulePackages = with config.boot.kernelPackages; [ tp_smapi acpi_call ];
+
+# Real suspend-to-RAM; s2idle barely saves anything on Sandy Bridge.
+boot.kernelParams = [ "mem_sleep_default=deep" ];
+
+# Hardware video decoding. Sandy Bridge needs the old i965 driver;
+# intel-media-driver only supports Broadwell and newer.
+hardware.graphics.extraPackages = [ pkgs.intel-vaapi-driver ];
+environment.sessionVariables.LIBVA_DRIVER_NAME = "i965";
+
+hardware.cpu.intel.updateMicrocode = true;
+
+# 4–8 GB of RAM: compressed swap in RAM beats swapping to disk.
+zramSwap.enable = true;
+services.fstrim.enable = true;
+# ----------------------------------------------------------------------
+```
+
+### In a virtual machine
+
+Turn on 3D acceleration in the VM settings — Hyprland needs a GPU to start.
+In UTM that means a display card with `-gl` in its name, such as
+`virtio-gpu-gl-pci`.
+
 ---
 
 ## Keybinds
