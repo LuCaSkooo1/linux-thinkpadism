@@ -13,9 +13,7 @@ reworked around a ThinkPad-red theme and packaged as a NixOS module.
 
 </div>
 
-![image](./screenshots/default.png)
-
-> The screenshots still show upstream's teal theme.
+![image](https://github.com/user-attachments/assets/5f319715-fd73-4b5d-913c-801e2b90f1f5)
 
 ---
 
