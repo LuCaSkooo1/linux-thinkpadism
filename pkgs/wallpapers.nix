@@ -12,7 +12,7 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
 
     mkdir -p $out/share/wallpapers/thinkpadism
-    cp -r *.png $out/share/wallpapers/thinkpadism/
+    cp *.png *.jpg $out/share/wallpapers/thinkpadism/
 
     runHook postInstall
   '';

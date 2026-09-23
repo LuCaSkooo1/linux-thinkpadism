@@ -44,15 +44,21 @@
     chmod 0644 "$file"
   '';
 
-  # Copies the wallpapers once. A stamp file, so ones you delete stay deleted.
+  wallpapers = "${pkgsFor.thinkpadism-wallpapers}/share/wallpapers/thinkpadism";
+
+  # Copies the wallpapers into ~/Pictures/Wallpapers, where the appearance
+  # menu looks, once per wallpaper set. The stamp is versioned, so ones you
+  # delete stay deleted -- until the set changes, when the new ones arrive.
   installWallpapers = pkgs.writeShellScript "thinkpadism-install-wallpapers" ''
     set -eu
     dir="$HOME/Pictures/Wallpapers"
-    stamp="''${XDG_STATE_HOME:-$HOME/.local/state}/thinkpadism/wallpapers-installed"
+    stamp="''${XDG_STATE_HOME:-$HOME/.local/state}/thinkpadism/wallpapers-installed-v2"
     if [ -e "$stamp" ]; then exit 0; fi
     mkdir -p "$dir" "$(dirname "$stamp")"
-    cp ${pkgsFor.thinkpadism-wallpapers}/share/wallpapers/thinkpadism/*.png "$dir/"
-    chmod u+w "$dir"/*.png
+    for f in ${wallpapers}/*; do
+      cp --update=none "$f" "$dir/"
+      chmod u+w "$dir/$(basename "$f")"
+    done
     touch "$stamp"
   '';
 in {
@@ -157,7 +163,17 @@ in {
 
   # hypridle, hyprlock and hyprpaper are still hyprlang; only Hyprland moved.
   xdg.configFile = {
-    "hypr/hyprpaper.conf".source = "${configs}/hypr/hyprpaper.conf";
+    # The starting wallpaper, straight from the store so it is there even
+    # before anything is copied. The appearance menu (SUPER+T) switches it.
+    "hypr/hyprpaper.conf".text = ''
+      wallpaper {
+        monitor =
+        path = ${wallpapers}/think4.png
+        fit_mode = cover
+      }
+      splash = false
+      ipc = on
+    '';
     "hypr/hypridle.conf".source = "${configs}/hypr/hypridle.conf";
     "hypr/hyprlock.conf".source = "${configs}/hypr/hyprlock.conf";
 

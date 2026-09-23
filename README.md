@@ -212,7 +212,7 @@ Linux Retroism, the base this is forked from, is by
 [repo](https://github.com/diinki/linux-retroism) ·
 [ko-fi](https://ko-fi.com/diinki) · [youtube](https://youtube.com/@diinkikot).
 
-Wallpapers by 96YOTTEA and others, as credited upstream.
+ThinkPad is a trademark of Lenovo; the wallpapers are fan art of its logo.
 
 ## License
 
