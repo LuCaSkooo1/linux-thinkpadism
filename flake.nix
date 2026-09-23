@@ -1,134 +1,41 @@
 {
-  description = "Linux Thinkpadism — a red-accented retro Hyprland desktop for a ThinkPad, on NixOS";
+  description = "Linux Thinkpadism — a red, retro Hyprland desktop for NixOS";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # Per-model hardware quirks: the right kernel modules, microcode and
-    # i915 options for a T420, maintained by people who own one.
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
   outputs = {
     self,
     nixpkgs,
     home-manager,
-    nixos-hardware,
-    ...
-  } @ inputs: let
-    systems = ["x86_64-linux" "aarch64-linux"];
-    forAllSystems = fn: nixpkgs.lib.genAttrs systems (system: fn nixpkgs.legacyPackages.${system});
-
-    # Everything machine-specific lives in one file. See machine.nix.
-    machine = import ./machine.nix;
-    inherit (machine) username hostname;
+  }: let
+    forAllSystems = nixpkgs.lib.genAttrs ["x86_64-linux" "aarch64-linux"];
   in {
-    ###################################################################
-    # The whole machine
-    #
-    #   sudo nixos-rebuild switch --flake .#<hostname>
-    #
-    # where <hostname> is machine.hostname -- "t420" as shipped. That one
-    # command builds the system, the user environment and the desktop
-    # together. There is no second step.
-    ###################################################################
-    nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
+    # The desktop. Add it to your flake and set thinkpadism.enable = true.
+    nixosModules.default = import ./modules/nixos.nix {inherit self home-manager;};
 
-      specialArgs = {inherit inputs username machine;};
-
-      modules = [
-        ./hosts/thinkpad
-
-        (import ./nix/nixos.nix self)
-
-        home-manager.nixosModules.home-manager
-        {
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            extraSpecialArgs = {inherit inputs username machine;};
-            users.${username} = import ./home;
-
-            # Move a file Home Manager would otherwise refuse to
-            # overwrite out of the way, rather than failing the switch.
-            backupFileExtension = "hm-bak";
-          };
-        }
-      ];
+    # `nix flake init -t github:LuCaSkooo1/linux-thinkpadism` drops a
+    # ready flake.nix next to your existing configuration.nix.
+    templates.default = {
+      path = ./template;
+      description = "A flake.nix that adds Thinkpadism to your /etc/nixos";
     };
 
-    ###################################################################
-    # Individual pieces, for use in someone else's configuration
-    ###################################################################
-    packages = forAllSystems (pkgs: rec {
-      # The shell itself: quickshell wrapped so it always launches this
-      # config.
-      thinkpadism = pkgs.callPackage ./nix/package.nix {};
-
-      thinkpadism-icons = pkgs.callPackage ./nix/icon-theme.nix {};
-      thinkpadism-gtk-theme = pkgs.callPackage ./nix/gtk-theme.nix {};
-      thinkpadism-wallpapers = pkgs.callPackage ./nix/wallpapers.nix {};
-
-      thinkpadism-neovim = import ./nix/neovim.nix {
-        inherit pkgs;
-        inherit (pkgs) lib;
-      };
-
+    packages = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in rec {
+      thinkpadism = pkgs.callPackage ./pkgs/package.nix {};
+      thinkpadism-icons = pkgs.callPackage ./pkgs/icon-theme.nix {};
+      thinkpadism-gtk-theme = pkgs.callPackage ./pkgs/gtk-theme.nix {};
+      thinkpadism-wallpapers = pkgs.callPackage ./pkgs/wallpapers.nix {};
       default = thinkpadism;
     });
 
-    homeManagerModules = rec {
-      thinkpadism = import ./nix/hm/default.nix self;
-      default = thinkpadism;
-    };
-
-    nixosModules = rec {
-      thinkpadism = import ./nix/nixos.nix self;
-      default = thinkpadism;
-    };
-
-    ###################################################################
-    # Development
-    ###################################################################
-    devShells = forAllSystems (pkgs: {
-      default = pkgs.mkShell {
-        packages = with pkgs; [
-          # `qmlls` for editor support; point your language server at it
-          # with `which qmlls`.
-          kdePackages.qtdeclarative
-          kdePackages.qt5compat
-          quickshell
-
-          # Recolouring the icon theme and generating the GTK themes.
-          (python3.withPackages (ps: [ps.pillow]))
-
-          # Formatting and checking this flake.
-          alejandra
-          nixd
-          statix
-          deadnix
-
-          # Checking the Lua by hand.
-          lua-language-server
-          stylua
-        ];
-
-        shellHook = ''
-          echo "Thinkpadism dev shell."
-          echo "  quickshell -p ./configs/quickshell        run the shell against this checkout"
-          echo "  python3 scripts/make-gtk-themes.py --check  preview the GTK theme generation"
-          echo "  python3 scripts/recolor-icons.py --check    preview the icon recolour"
-          echo "  nix flake check                            evaluate everything"
-        '';
-      };
-    });
-
-    formatter = forAllSystems (pkgs: pkgs.alejandra);
+    formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
   };
 }

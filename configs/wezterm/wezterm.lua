@@ -1,9 +1,8 @@
 -- Thinkpadism WezTerm configuration.
 --
--- Tuned for a ThinkPad T420: Sandy Bridge graphics, a 1366x768 or 1600x900
--- panel, and a keyboard worth using. The guiding idea is the same as the
--- rest of the rice -- a terminal that behaves like a fixed-function device,
--- with no animation, no rounding, and one accent colour.
+-- The same idea as the rest of the rice: a terminal that behaves like a
+-- fixed-function device, with no animation, no rounding, and one accent
+-- colour.
 
 local wezterm = require("wezterm")
 local colors = require("colors")
@@ -55,12 +54,6 @@ config.font = wezterm.font_with_fallback({
     { family = "Noto Color Emoji" },
 })
 config.font_size = 11.0
-
--- The T420 panel is 1366x768 at ~125 DPI in the common configuration.
--- Full hinting keeps small text crisp on a non-HiDPI display, where
--- subpixel positioning just smears it.
-config.freetype_load_target = "Light"
-config.freetype_render_target = "HorizontalLcd"
 
 -- No ligatures: in a config file, `!=` should look like two characters.
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
@@ -121,12 +114,11 @@ config.visual_bell = {
 }
 
 --------------------------------------------------------------------------
--- PERFORMANCE (Sandy Bridge, Intel HD 3000)
+-- PERFORMANCE
 --------------------------------------------------------------------------
 
--- The HD 3000 reports OpenGL 3.1 and has no usable Vulkan driver, so the
--- WebGpu front end either falls back to software or misrenders. OpenGL is
--- the right choice here and costs nothing on newer hardware either.
+-- OpenGL rather than WebGpu: it works on old Intel GPUs and inside VMs,
+-- where WebGpu often falls back to software without saying so.
 config.front_end = "OpenGL"
 
 -- The panel is 60Hz; rendering faster than that only burns battery.

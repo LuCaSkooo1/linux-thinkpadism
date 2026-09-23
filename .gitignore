@@ -5,10 +5,3 @@ __pycache__/
 # Nix build outputs
 result
 result-*
-
-# Your machine's disks. Deliberately not published: these UUIDs are yours,
-# and they will not boot anyone else's machine.
-#
-# Nix flakes only see git-tracked files, so you DO have to commit it -- but
-# with `git add -f`, on a branch you never push. See the README.
-hosts/*/hardware-configuration.nix

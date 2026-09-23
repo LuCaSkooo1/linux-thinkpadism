@@ -12,7 +12,7 @@
     "currentTheme": "thinkpad-dark",
     "currentWallpaper": "",
     "execCommands": {
-      "files": "nemo",
+      "files": "wezterm -e yazi",
       "terminal": "wezterm",
       "tuiAudio": "wiremix",
       "tuiFiles": "yazi",

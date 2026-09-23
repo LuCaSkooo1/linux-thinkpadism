@@ -86,8 +86,8 @@ o.foldtext = ""
 -- Performance
 --------------------------------------------------------------------------
 
--- A T420 has a Sandy Bridge dual core. Syntax highlighting a minified
--- file will hang it; these caps stop that.
+-- Syntax highlighting a minified file can hang a slow machine; these
+-- caps stop that.
 o.synmaxcol = 300
 o.redrawtime = 1500
 o.lazyredraw = false          -- interacts badly with noice-style plugins

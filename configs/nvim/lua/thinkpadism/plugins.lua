@@ -33,8 +33,7 @@ setup("nvim-treesitter.configs", {
 
     highlight = {
         enable = true,
-        -- Regex highlighting on top of treesitter is a real cost on a
-        -- dual-core Sandy Bridge, and buys nothing here.
+        -- Regex highlighting on top of treesitter costs CPU for nothing.
         additional_vim_regex_highlighting = false,
         disable = function(_, buf)
             -- Bail out on very large files rather than hanging.
@@ -329,8 +328,8 @@ end
 -- LSP
 --------------------------------------------------------------------------
 
--- Servers are installed by Nix (see nix/neovim.nix). Anything not on
--- PATH is skipped silently rather than erroring on every start.
+-- Servers are not bundled. Install any of these (e.g. pkgs.nixd in your
+-- configuration.nix) and it is picked up; missing ones are skipped.
 local servers = {
     nixd = {},
     lua_ls = {

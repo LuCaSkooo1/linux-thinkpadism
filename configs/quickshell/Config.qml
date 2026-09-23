@@ -220,8 +220,8 @@ Singleton {
                 property string currentWallpaper: ""
 
                 property JsonObject execCommands: JsonObject {
-                    property string terminal: "kitty"
-                    property string files: "nemo"
+                    property string terminal: "wezterm"
+                    property string files: "wezterm -e yazi"
                     // TUI tools, launched inside the terminal.
                     property string tuiFiles: "yazi"
                     property string tuiNetwork: "nmtui"

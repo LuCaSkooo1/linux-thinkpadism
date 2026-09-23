@@ -7,14 +7,9 @@ local theme = require("lib.theme")
 -- MONITORS
 --------------------------------------------------------------------------
 
--- Fallback rule: any output not named explicitly gets its preferred mode,
--- placed automatically, unscaled. The T420's panel is 1366x768 (or 1600x900
--- on the HD+ option) -- neither wants fractional scaling, so scale 1 is
--- right and "auto" would only risk guessing otherwise.
---
--- Machine-specific overrides belong in 90-machine.lua, which the Home
--- Manager module generates and Hyprland loads last.
-hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
+-- Any output: its preferred mode, placed automatically, scaled by DPI.
+-- To pin a monitor, add your own hl.monitor() call; see the README.
+hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
 
 --------------------------------------------------------------------------
 -- ENVIRONMENT
@@ -83,13 +78,11 @@ hl.config({
             offset       = { 2, 2 },
         },
 
-        -- Blur is the single most expensive thing a compositor can do, and
-        -- a Sandy Bridge HD 3000 has no headroom for it. Off, permanently.
+        -- Blur is the most expensive thing a compositor does. Off.
         blur = { enabled = false },
     },
 
-    -- Animations off: instant windows, and a measurable amount of battery
-    -- back on a 2011 laptop.
+    -- Animations off: instant windows, and a little battery back.
     animations = { enabled = false },
 
     dwindle = {
@@ -115,8 +108,8 @@ hl.config({
     },
 
     cursor = {
-        -- The i915 hardware cursor plane flickers on Sandy Bridge. Render
-        -- the cursor in the compositor instead.
+        -- Software cursor: avoids flicker on older Intel GPUs and the
+        -- invisible-cursor problem in most virtual machines.
         no_hardware_cursors = 1,
 
         -- Push the XCursor theme into GSettings so CSD GTK apps agree with
@@ -131,7 +124,7 @@ hl.config({
 
 hl.config({
     input = {
-        -- Overridden per-machine in 90-machine.lua, which loads later.
+        -- Overridden by thinkpadism.keyboardLayout (90-keyboard.lua).
         kb_layout  = "us",
         kb_options = "",
 
@@ -145,8 +138,6 @@ hl.config({
         repeat_delay = 300,
 
         touchpad = {
-            -- The T420's touchpad is small and stiff; tapping beats
-            -- pressing it.
             tap_to_click         = true,
             natural_scroll       = true,
             disable_while_typing = true,
@@ -154,8 +145,6 @@ hl.config({
             -- 1 = enabled with timeout. Lifting mid-drag doesn't drop.
             drag_lock = 1,
 
-            -- The pad is physically tiny, so scrolling across it covers
-            -- very little; slow it down rather than overshooting.
             scroll_factor = 0.6,
 
             -- One/two/three fingers = left/right/middle, regardless of
@@ -172,17 +161,3 @@ hl.config({
 
 -- Three fingers sideways moves between workspaces.
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
-
--- The TrackPoint: a touch slower than the touchpad, since it is used for
--- precision work rather than crossing the screen.
---
--- Device names differ between models. Run `hyprctl devices` and copy the
--- one that looks like a pointing stick if this block does nothing.
-hl.device({
-    name        = "tpps/2-ibm-trackpoint",
-    sensitivity = -0.2,
-})
-hl.device({
-    name        = "tpps/2-elan-trackpoint",
-    sensitivity = -0.2,
-})
