@@ -192,8 +192,8 @@ in {
 
   programs.yazi.enable = true;
   programs.git = {
-    enable = true;
-    lfs    = true;
+    enable     = true;
+    lfs.enable = true;
   };
 
   #####################################################################
