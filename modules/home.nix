@@ -191,7 +191,10 @@ in {
   };
 
   programs.yazi.enable = true;
-  programs.git.enable = true;
+  programs.git = {
+    enable = true;
+    lfs    = true;
+  };
 
   #####################################################################
   # Dark, everywhere
