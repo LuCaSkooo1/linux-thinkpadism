@@ -1,3 +1,2 @@
 #!/bin/sh
-pane_id=$(wezterm cli spawn --new-window)
-echo -e "fastfetch\n" | wezterm cli send-text --no-paste --pane-id $pane_id
+exec wezterm start -- sh -c 'sleep 0.3; clear; fastfetch; exec "${SHELL:-bash}"'
