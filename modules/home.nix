@@ -176,6 +176,7 @@ in {
     '';
     "hypr/hypridle.conf".source = "${configs}/hypr/hypridle.conf";
     "hypr/hyprlock.conf".source = "${configs}/hypr/hyprlock.conf";
+    "hypr/lib/fetch".source     = "${configs}/hypr/lua/lib/fetch";
 
     "wezterm/wezterm.lua".source = "${configs}/wezterm/wezterm.lua";
     "wezterm/colors.lua".source = "${configs}/wezterm/colors.lua";
